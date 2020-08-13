@@ -12,7 +12,7 @@ end
 function reset!(forest::InfectionForest)
   @assert length(forest.sources) == length(forest.infections)
   
-  fill!(forest.sources, Simulation.Event())
+  fill!(forest.sources, Event())
   
   for vec in forest.infections
     empty!(vec)

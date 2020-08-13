@@ -108,7 +108,7 @@ function resample!(
   dist_death_time)
 
   for i in 1:length(ages)
-    progressions[i] = Simulation.sample_progression(rng, ages[i],         
+    progressions[i] = sample_progression(rng, ages[i],         
       dist_incubation_time, 
       dist_symptom_onset_time, 
       dist_hospitalization_time,
