@@ -82,7 +82,7 @@ function load_params(rng=MersenneTwister(0);
   dist_severe_recovery_time = Uniform(4*7, 8*7)
   dist_death_time = LogNormal(2.610727719719777, 0.44476420066780653)
   
-  progressions = Vector{Simulation.Progression}(undef, num_individuals);
+  progressions = Vector{Progression}(undef, num_individuals);
   resample!(rng, progressions, individuals_df.age,
     dist_incubation_time, 
     dist_symptom_onset_time,
