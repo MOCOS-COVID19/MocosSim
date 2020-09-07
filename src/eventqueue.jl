@@ -1,6 +1,6 @@
 using DataStructures
 
-import DataStructures.compare
+import DataStructures.lt
 
 import Base: push!, pop!, isempty, empty!, sizehint!
 export push!, pop!, isempty!, empty!, sizehint!
