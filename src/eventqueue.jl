@@ -5,7 +5,7 @@ import DataStructures.compare
 import Base: push!, pop!, isempty, empty!, sizehint!
 export push!, pop!, isempty!, empty!, sizehint!
 
-struct Earlier end
+struct Earlier <: Base.Order.Ordering end
 compare(c::Earlier, x::Event, y::Event) = time(x) == time(y) ? kind(x) < kind(y) : time(x) < time(y)
 
 

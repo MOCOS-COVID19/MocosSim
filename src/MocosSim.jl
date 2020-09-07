@@ -93,5 +93,4 @@ function simulate!(state::SimState, params::SimParams, callback)
   nothing
 end
 
-  
 end #module

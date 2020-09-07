@@ -27,7 +27,7 @@ function execute!(kind::EventKind, state::SimState, params::SimParams, event::Ev
   elseif GoHospitalEvent==kind;                 return execute!(Val(GoHospitalEvent), state, params, event)
   elseif ReleasedEvent==kind;                   return execute!(Val(ReleasedEvent), state, params, event)
   elseif DetectionEvent==kind;                  return execute!(Val(DetectionEvent), state, params, event)
-  elseif TrackedEvent==kind;                    return execute!(Val(TrackedEvent), state, params, event)
+  elseif TracedEvent==kind;                     return execute!(Val(TracedEvent), state, params, event)
   elseif QuarantinedEvent==kind;                return execute!(Val(QuarantinedEvent), state, params, event)
   elseif QuarantineEndEvent==kind;              return execute!(Val(QuarantineEndEvent), state, params, event)
   else error("unsupported event kind $kind")
@@ -281,12 +281,12 @@ function execute!(::Val{DetectionEvent}, state::SimState, params::SimParams, eve
   setdetected!(state, subject_id, Detected)
   quarantinehousehold!(state, params, subject_id, include_subject=true)
   if FromQuarantineDetection !== detection_kind
-    trackhousehold!(state, params, subject_id, track_household_connections=true)
+    tracehousehold!(state, params, subject_id, trace_household_connections=true)
   end
   return true
 end
 
-function execute!(::Val{TrackedEvent}, state::SimState, params::SimParams, event::Event)::Bool  
+function execute!(::Val{TracedEvent}, state::SimState, params::SimParams, event::Event)::Bool  
   quarantinehousehold!(state, params, subject(event), include_subject=true)
   
   for member in householdof(params, subject(event))
@@ -306,7 +306,7 @@ function execute!(::Val{TrackedEvent}, state::SimState, params::SimParams, event
     @assert member_health ∉ SA[SevereSymptoms, CriticalSymptoms, Dead] "patient should have already been infected at the hospital"
     
     if Infectious == member_health || MildSymptoms == member_health
-      push!(state.queue, Event(Val(DetectionEvent), time(event) + params.testing_time, member, FromTrackingDetection))
+      push!(state.queue, Event(Val(DetectionEvent), time(event) + params.testing_time, member, FromTracingDetection))
     end
   end
   return true
@@ -410,16 +410,16 @@ function quarantinehousehold!(state::SimState, params::SimParams, subject_id::In
   nothing
 end
 
-function trackhousehold!(state::SimState, params::SimParams, subject_id::Integer; track_household_connections::Bool)
+function tracehousehold!(state::SimState, params::SimParams, subject_id::Integer; trace_household_connections::Bool)
   for member in householdof(params, subject_id)
-     backtrack!(state, params, member, track_household_connections=track_household_connections) 
-     forwardtrack!(state, params, member, track_household_connections=track_household_connections)
+     backtrace!(state, params, member, trace_household_connections=trace_household_connections) 
+     forwardtrace!(state, params, member, trace_household_connections=trace_household_connections)
   end
   nothing
 end
 
 
-function backtrack!(state::SimState, params::SimParams, person_id::Integer; track_household_connections::Bool)
+function backtrace!(state::SimState, params::SimParams, person_id::Integer; trace_household_connections::Bool)
   current_time = time(state)
   
   event = backwardinfection(state, person_id)
@@ -430,7 +430,7 @@ function backtrack!(state::SimState, params::SimParams, person_id::Integer; trac
     return
   end
   
-  if !track_household_connections && (HouseholdContact == contactkind(event))
+  if !trace_household_connections && (HouseholdContact == contactkind(event))
     return
   end
   
@@ -440,17 +440,17 @@ function backtrack!(state::SimState, params::SimParams, person_id::Integer; trac
   end
      
 
-  if uses_phone_tracking(params, person_id) && 
-      uses_phone_tracking(params, backward_id) && 
-      rand(state.rng) < params.phone_tracking_params.detection_prob
-    push!(state.queue, Event(Val(TrackedEvent), current_time + params.phone_tracking_params.detection_delay, backward_id, person_id, PhoneTracked))
-  elseif rand(state.rng) < params.backward_tracking_prob 
-    push!(state.queue, Event(Val(TrackedEvent), current_time + params.backward_detection_delay, backward_id, person_id, ClassicalTracked))
+  if uses_phone_traceing(params, person_id) && 
+      uses_phone_traceing(params, backward_id) && 
+      rand(state.rng) < params.phone_traceing_params.detection_prob
+    push!(state.queue, Event(Val(TraceedEvent), current_time + params.phone_traceing_params.detection_delay, backward_id, person_id, PhoneTraceed))
+  elseif rand(state.rng) < params.backward_traceing_prob 
+    push!(state.queue, Event(Val(TraceedEvent), current_time + params.backward_detection_delay, backward_id, person_id, ClassicalTraceed))
   end
   nothing
 end
 
-function forwardtrack!(state::SimState, params::SimParams, person_id::Integer; track_household_connections::Bool)
+function forwardtrace!(state::SimState, params::SimParams, person_id::Integer; trace_household_connections::Bool)
   current_time = time(state)
 
   # handle all outgoing infections
@@ -464,7 +464,7 @@ function forwardtrack!(state::SimState, params::SimParams, person_id::Integer; t
     health_state = health(state, forward_id)    
     @assert Healthy != health_state
     
-    if !track_household_connections && (HouseholdContact == contact_kind)
+    if !trace_household_connections && (HouseholdContact == contact_kind)
       continue
     end
 
@@ -472,22 +472,22 @@ function forwardtrack!(state::SimState, params::SimParams, person_id::Integer; t
       # the check for detected should be enough for avoiding loops and multiple checks of the same person
       # - in case there are multiple backtracing processes at the same time it does not affect the chances of being tested positively
       # - here we are looking for the contacts and all the contacts  already are or were infected
-      # - only true infections are stored hence no one will be forward tracked twice anyway
-      # it is just the chance of being detected which becomes larger if multiple backtrackings are leading to the same person
+      # - only true infections are stored hence no one will be forward traced twice anyway
+      # it is just the chance of being detected which becomes larger if multiple backtracings are leading to the same person
       continue
     end
     
-    # in very rare circumstances these asserts are actually not true - if the backtracking comes in exactly between hospitalization and detection
+    # in very rare circumstances these asserts are actually not true - if the backtracing comes in exactly between hospitalization and detection
 #    @assert health_state ∉ SA[SevereSymptoms, CriticalSymptoms, Dead] "the forward $forward_id should have already been detected at the hospital but his health is $health_state"
     freedom_state = freedom(state, forward_id)
 #    @assert freedom_state ∉ SA[Hospitalized, Released] "the forward $forward_id should have already been detected at the hospital but he is $freedom_state"
 
-    if uses_phone_tracking(params, person_id) && 
-        uses_phone_tracking(params, forward_id) && 
-        rand(state.rng) < params.phone_tracking_params.detection_prob
-      push!(state.queue, Event(Val(TrackedEvent), current_time + params.phone_tracking_params.detection_delay, forward_id, person_id, PhoneTracked))
-    elseif rand(state.rng) < params.forward_tracking_prob 
-      push!(state.queue, Event(Val(TrackedEvent), current_time + params.forward_detection_delay, forward_id, person_id, ClassicalTracked))
+    if uses_phone_tracing(params, person_id) && 
+        uses_phone_tracing(params, forward_id) && 
+        rand(state.rng) < params.phone_tracing_params.detection_prob
+      push!(state.queue, Event(Val(TracedEvent), current_time + params.phone_tracing_params.detection_delay, forward_id, person_id, PhoneTraced))
+    elseif rand(state.rng) < params.forward_tracing_prob 
+      push!(state.queue, Event(Val(TracedEvent), current_time + params.forward_detection_delay, forward_id, person_id, ClassicalTraced))
     end
 
   end
