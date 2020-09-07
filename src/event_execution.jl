@@ -379,7 +379,7 @@ function execute!(::Val{QuarantineEndEvent}, state::SimState, params::SimParams,
 end
 
 #
-# Quarantine and backtracking helpers
+# Quarantine and backtracing helpers
 #
 
 function detectioncheck!(state::SimState, params::SimParams, person_id::Integer)
@@ -439,13 +439,12 @@ function backtrack!(state::SimState, params::SimParams, person_id::Integer; trac
     return
   end
      
-
-  if uses_phone_tracking(params, person_id) && 
-      uses_phone_tracking(params, backward_id) && 
-      rand(state.rng) < params.phone_tracking_params.detection_prob
-    push!(state.queue, Event(Val(TrackedEvent), current_time + params.phone_tracking_params.detection_delay, backward_id, person_id, PhoneTracked))
-  elseif rand(state.rng) < params.backward_tracking_prob 
-    push!(state.queue, Event(Val(TrackedEvent), current_time + params.backward_detection_delay, backward_id, person_id, ClassicalTracked))
+  if uses_phone_tracing(params, person_id) && 
+      uses_phone_tracing(params, backward_id) && 
+      rand(state.rng) < params.phone_traceing_params.detection_prob
+    push!(state.queue, Event(Val(TraceedEvent), current_time + params.phone_tracing_params.detection_delay, backward_id, person_id, PhoneTraceed))
+  elseif rand(state.rng) < params.backward_tracing_prob 
+    push!(state.queue, Event(Val(TraceedEvent), current_time + params.backward_detection_delay, backward_id, person_id, ClassicalTraceed))
   end
   nothing
 end

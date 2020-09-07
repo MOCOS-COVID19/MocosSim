@@ -5,9 +5,8 @@ import DataStructures.compare
 import Base: push!, pop!, isempty, empty!, sizehint!
 export push!, pop!, isempty!, empty!, sizehint!
 
-struct Earlier end
-compare(c::Earlier, x::Event, y::Event) = time(x) == time(y) ? kind(x) < kind(y) : time(x) < time(y)
-
+struct Earlier <: Base.Order.Ordering end
+lt(c::Earlier, x::Event, y::Event) = time(x) == time(y) ? kind(x) < kind(y) : time(x) < time(y)
 
 #struct EventQueue
 #  immediates::CircularDeque{Event} 
