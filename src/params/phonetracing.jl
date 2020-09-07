@@ -1,20 +1,20 @@
-struct PhoneTrackingParams
+struct PhoneTracingParams
   isusingapp::BitVector
   detection_prob::Float64
   detection_delay::Float64  
 end
 
-PhoneTrackingParams(N::Integer, detection_prob::Real=1.0, detection_delay::Real=0.5) = 
-  PhoneTrackingParams(BitVector(undef, N), detection_prob, detection_delay)
+PhoneTracingParams(N::Integer, detection_prob::Real=1.0, detection_delay::Real=0.5) = 
+  PhoneTracingParams(BitVector(undef, N), detection_prob, detection_delay)
 
-function resample!(rng::AbstractRNG, params::PhoneTrackingParams, prob::Real)
+function resample!(rng::AbstractRNG, params::PhoneTracingParams, prob::Real)
   for i in 1:length(params.isusingapp)
     params.isusingapp[i] = rand(rng) < prob
   end
   params
 end
 
-function resamplebyhouseholds!(rng::AbstractRNG, params::PhoneTrackingParams, prob::Real, household_ptrs::Vector{Tuple{Ti,Ti}} where Ti<:Integer)
+function resamplebyhouseholds!(rng::AbstractRNG, params::PhoneTracingParams, prob::Real, household_ptrs::Vector{Tuple{Ti,Ti}} where Ti<:Integer)
   
   num_individuals = length(household_ptrs)
   num_users = rand(rng, Binomial(num_individuals, prob)) # makes the number same as in the independent case
@@ -38,13 +38,13 @@ function resamplebyhouseholds!(rng::AbstractRNG, params::PhoneTrackingParams, pr
   end
 end
 
-function PhoneTrackingParams(rng::AbstractRNG, 
+function PhoneTracingParams(rng::AbstractRNG, 
                              N::Integer, 
                              usage::Real, 
                              detection_delay::Real=0.25, 
                              detection_prob::Real=1.0, 
                              household_ptrs::Union{Nothing,Vector{Tuple{Ti,Ti}} where Ti <: Integer} = nothing)
-  params = PhoneTrackingParams(N, detection_prob, detection_delay)
+  params = PhoneTracingParams(N, detection_prob, detection_delay)
   if household_ptrs === nothing
     resample!(rng, params, usage)
   else
@@ -57,9 +57,9 @@ end
 
 
 
-uses_phone_tracking(params::PhoneTrackingParams, person_id::Integer) = params.isusingapp[person_id]
+uses_phone_tracing(params::PhoneTracingParams, person_id::Integer) = params.isusingapp[person_id]
 
-function saveparams(dict, p::PhoneTrackingParams, prefix::AbstractString="")
+function saveparams(dict, p::PhoneTracingParams, prefix::AbstractString="")
   dict[prefix*"isusingapp"] = p.isusingapp
   dict[prefix*"detection_prob"] = p.detection_prob
   dict[prefix*"detection_delay"] = p.detection_delay

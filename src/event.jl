@@ -12,9 +12,9 @@
   GoHospitalEvent
   
   #DetectedOutsideQuarantineEvent
-  #DetectedFromTrackingEvent
+  #DetectedFromTracingEvent
 
-  TrackedEvent
+  TracedEvent
   ReleasedEvent
   
   # the progression events have low priority to let the immediate actions execute
@@ -52,8 +52,8 @@ struct Event
   Event(::Val{TransmissionEvent}, ::Real, ::Integer) = error("source and contact kind needed for transmission event")
   Event(::Val{TransmissionEvent}, time::Real, subject::Integer, source::Integer, contact_kind::ContactKind) = new(time, subject, source, TransmissionEvent, UInt8(contact_kind))
   Event(::Val{QuarantinedEvent}, time::Real, subject::Integer, extension::Bool) = new(time, subject, 0, QuarantinedEvent, UInt8(extension))
-  Event(::Val{TrackedEvent}, ::Real, ::Integer) = error("source and tracking kind must be given for TrackedEvent")
-  Event(::Val{TrackedEvent}, time::Real, subject::Integer, source::Integer, tracking_kind::TrackingKind) = new(time, subject, source, TrackedEvent, UInt8(tracking_kind))
+  Event(::Val{TracedEvent}, ::Real, ::Integer) = error("source and tracing kind must be given for TracedEvent")
+  Event(::Val{TracedEvent}, time::Real, subject::Integer, source::Integer, tracing_kind::TracingKind) = new(time, subject, source, TracedEvent, UInt8(tracing_kind))
   Event(::Val{DetectionEvent}, ::Real, ::Integer) = error("detection kind must be given for detection event")
   Event(::Val{DetectionEvent}, time::Real, subject::Integer, detectionkind::DetectionKind) = new(time, subject, 0, DetectionEvent, UInt8(detectionkind))
 end
@@ -66,7 +66,7 @@ kind(event::Event) = event.event_kind
 contactkind(event::Event) = istransmission(event) ? ContactKind(event.extra) : NoContact
 detectionkind(event::Event) = isdetection(event) ? DetectionKind(event.extra) : NoDetection
 extension(event::Event) = isquarantine(event) ? Bool(event.extra) : false
-trackingkind(event::Event) = istracking(event) ? TrackingKind(event.extra) : NotTracked
+tracingkind(event::Event) = istracing(event) ? TracingKind(event.extra) : NotTraced
 
 function show(io::IO, event::Event)
   print(io, time(event), ":", kind(event), " ", subject(event))
@@ -74,7 +74,7 @@ function show(io::IO, event::Event)
     print(io, " <= ", source(event), " ", contactkind(event))
   elseif QuarantinedEvent == kind(event)
     print(io, " extension=", extension(event))
-  elseif TrackedEvent == kind(event)
+  elseif TracedEvent == kind(event)
     print(io, " <= ", source(event))
   elseif InvalidEvent == kind(event)
     print(io, " <= ", source(event), " ", kind(event), " ", event.extra)
@@ -87,8 +87,8 @@ istransmission(ek::EventKind) = ek == TransmissionEvent || ek == OutsideInfectio
 istransmission(e::Event) = istransmission(kind(e))
 isquarantine(ek::EventKind) = ek == QuarantinedEvent || ek == QuarantineEndEvent
 isquarantine(e::Event) = isquarantine(kind(e))
-istracking(ek::EventKind) = ek == TrackedEvent
-istracking(e::Event) = istracking(kind(e))
+istracing(ek::EventKind) = ek == TracedEvent
+istracing(e::Event) = istracing(kind(e))
 ishospitalization(ek::EventKind) = ek == GoHospitalEvent
 ishospitalization(e::Event) = ishospitalization(kind(e))
 isdeath(ek::EventKind) = ek == DeathEvent
