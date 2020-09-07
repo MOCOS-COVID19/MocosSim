@@ -8,7 +8,7 @@ include("params/households.jl")
 include("params/friendship.jl")
 include("params/progression.jl")
 include("params/hospital.jl")
-include("params/phonetracking.jl")
+include("params/phonetracing.jl")
 include("params/spreading.jl")
 
 abstract type InfectionModulation end
@@ -30,16 +30,16 @@ struct SimParams
   hospital_detections::Bool
   mild_detection_prob::Float64
 
-  backward_tracking_prob::Float32
+  backward_tracing_prob::Float32
   backward_detection_delay::TimeDiff
   
-  forward_tracking_prob::Float32
+  forward_tracing_prob::Float32
   forward_detection_delay::TimeDiff
   
   quarantine_length::Float32
   testing_time::TimeDiff
 
-  phone_tracking_params::Union{Nothing, PhoneTrackingParams}
+  phone_tracing_params::Union{Nothing, PhoneTracingParams}
 
   infection_modulation_function::Union{Nothing,InfectionModulation}
   spreading_params::Union{Nothing, SpreadingParams}
@@ -59,19 +59,19 @@ socialcompetence(params::SimParams, person_id::Integer) =
 
 ishealthcare(params::SimParams, person_id::Integer) = 
   nothing!=params.hospital_kernel_params && ishealthcare(params.hospital_kernel_params, person_id)
-uses_phone_tracking(params::SimParams, person_id::Integer) =
-  nothing!=params.phone_tracking_params && uses_phone_tracking(params.phone_tracking_params, person_id)
+uses_phone_tracing(params::SimParams, person_id::Integer) =
+  nothing!=params.phone_tracing_params && uses_phone_tracing(params.phone_tracing_params, person_id)
 
 spreading(params::SimParams, person_id::Integer) = isnothing(params.spreading_params) ? 1.0 : spreading(params.spreading_params, person_id)
 
 function load_params(rng=MersenneTwister(0);
-        population::Union{AbstractString,DataFrame},
+        population::DataFrame,
         infection_modulation_name::Union{Nothing,AbstractString}=nothing,
         infection_modulation_params::NamedTuple=NamedTuple{}(),
         kwargs...
         )
         
-  individuals_df::DataFrame = isa(population, AbstractString) ? load_individuals(population) : population
+  individuals_df::DataFrame = population
   
   num_individuals = individuals_df |> nrow
 
@@ -121,18 +121,18 @@ function make_params(
   hospital_detections::Bool=true,
   mild_detection_prob::Float64=0.0,
   
-  backward_tracking_prob::Float64=1.0,
+  backward_tracing_prob::Float64=0.0,
   backward_detection_delay::Float64=1.0,
   
-  forward_tracking_prob::Float64=1.0,
+  forward_tracing_prob::Float64=0.0,
   forward_detection_delay::Float64=1.0,
   
   quarantine_length::Float64=14.0,
   testing_time::Float64=1.0,
 
-  phone_tracking_usage::Real=0.0,
+  phone_tracing_usage::Real=0.0,
   phone_detection_delay::Real=0.25,
-  phone_tracking_usage_by_household::Bool=false,
+  phone_tracing_usage_by_household::Bool=false,
 
   spreading_alpha::Union{Nothing,Real}=nothing,
   spreading_x0::Real=1,
@@ -168,12 +168,12 @@ function make_params(
                             else error("hospital_kernel_param must be postive or 0, got $hospital_kernel_param")
                             end
 
-  phone_tracking_params = if 0 == phone_tracking_usage; nothing
-                      elseif 0.0 < phone_tracking_usage <= 1.0
-                        phone_tracking_usage_by_household ?
-                          PhoneTrackingParams(rng, num_individuals, phone_tracking_usage, phone_detection_delay, 1, household_ptrs) :
-                          PhoneTrackingParams(rng, num_individuals, phone_tracking_usage, phone_detection_delay, 1)
-                      else error("tracking_app_usage must be nonnegative, got $phone_tracking_usage")
+  phone_tracing_params = if 0 == phone_tracing_usage; nothing
+                      elseif 0.0 < phone_tracing_usage <= 1.0
+                        phone_tracing_usage_by_household ?
+                          PhoneTracingParams(rng, num_individuals, phone_tracing_usage, phone_detection_delay, 1, household_ptrs) :
+                          PhoneTracingParams(rng, num_individuals, phone_tracing_usage, phone_detection_delay, 1)
+                      else error("tracing_app_usage must be nonnegative, got $phone_tracing_usage")
                       end
   
   spreading_params = if nothing == spreading_alpha; nothing
@@ -198,16 +198,16 @@ function make_params(
     hospital_detections,
     mild_detection_prob,
     
-    backward_tracking_prob,
+    backward_tracing_prob,
     backward_detection_delay,
     
-    forward_tracking_prob,
+    forward_tracing_prob,
     forward_detection_delay,
     
     quarantine_length, # quarantine length
     testing_time, # testing time
 
-    phone_tracking_params,
+    phone_tracing_params,
     infection_modulation_function,
     spreading_params
   )
@@ -224,15 +224,15 @@ function saveparams(dict, p::SimParams)
 
   dict["infection_modulation"] = p.infection_modulation_function
 
-  dict["tracking/backward_prob"] = p.backward_tracking_prob
-  dict["tracking/backward_detection_delay"] = p.backward_detection_delay
-  dict["tracking/forward_tracking_prob"] = p.forward_tracking_prob
-  dict["tracking/forward_detection_delay"] = p.forward_detection_delay
-  dict["tracking/testing_time"] = p.testing_time
+  dict["tracing/backward_prob"] = p.backward_tracing_prob
+  dict["tracing/backward_detection_delay"] = p.backward_detection_delay
+  dict["tracing/forward_tracing_prob"] = p.forward_tracing_prob
+  dict["tracing/forward_detection_delay"] = p.forward_detection_delay
+  dict["tracing/testing_time"] = p.testing_time
 
   saveparams(dict, p.progressions, "progressions/")
   nothing==p.hospital_kernel_params || saveparams(dict, p.hospital_kernel_params, "hospital/")
-  nothing==p.phone_tracking_params || saveparams(dict, p.phone_tracking_params, "phone_tracking/")
+  nothing==p.phone_tracing_params || saveparams(dict, p.phone_tracing_params, "phone_tracing/")
   nothing==p.spreading_params || saveparams(dict, p.spreading_params, "spreading")
   nothing
 end
