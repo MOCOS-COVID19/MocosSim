@@ -5,8 +5,9 @@ struct TanhModulation <: InfectionModulation
   loc::Float64
   scale::Float64
   limit_value::Float64
-  TanhModulation(;weight_detected::Real, weight_deaths::Real, loc::Real, scale::Real, limit_value::Real) = new(weight_detected, weight_deaths, loc, scale, limit_value)
 end
+TanhModulation(;weight_detected::Real, weight_deaths::Real, loc::Real, scale::Real, limit_value::Real) =
+  TanhModulation(weight_detected, weight_deaths, loc, scale, limit_value)
 
 function (f::TanhModulation)(state::SimState, params::SimParams, event::Event)
   @assert kind(event) == TransmissionEvent
@@ -16,13 +17,13 @@ function (f::TanhModulation)(state::SimState, params::SimParams, event::Event)
     return true # do not affect other types of contact than "outer" ones
   end
 
-  num_detected = numdetected(state.stats) 
+  num_detected = numdetected(state.stats)
   num_deaths = numdead(state.stats)
   fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths
   x = (fear - f.loc) / f.scale
   scaling = ((1 - f.limit_value) / 2)
   base = (1 - (1 - f.limit_value) / 2)
-  rand(state.rng) < -tanh(x) * scaling + base 
+  rand(state.rng) < -tanh(x) * scaling + base
 end
 
 # This all to avoid using @eval and others

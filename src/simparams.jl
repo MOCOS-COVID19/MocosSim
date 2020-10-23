@@ -20,22 +20,22 @@ struct SimParams
   genders::BitVector
 
   progressions::Vector{Progression} # not sure if progressions should be there
-    
+
   hospital_kernel_params::Union{Nothing, HospitalInfectionParams}  # nothing if hospital kernel not active  
   friendship_kernel_params::Union{Nothing, FriendshipKernelParams}
 
   constant_kernel_param::Float64
   household_kernel_param::Float64
-  
+
   hospital_detections::Bool
   mild_detection_prob::Float64
 
   backward_tracing_prob::Float32
   backward_detection_delay::TimeDiff
-  
+
   forward_tracing_prob::Float32
   forward_detection_delay::TimeDiff
-  
+
   quarantine_length::Float32
   testing_time::TimeDiff
 
@@ -54,10 +54,10 @@ householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_
 age(params::SimParams, person_id::Integer) = params.ages[person_id]
 gender(params::SimParams, person_id::Integer) = params.genders[person_id]
 
-socialcompetence(params::SimParams, person_id::Integer) = 
+socialcompetence(params::SimParams, person_id::Integer) =
   nothing!=params.friendship_kernel_params && socialcompetence(params.friendship_kernel_params, person_id)
 
-ishealthcare(params::SimParams, person_id::Integer) = 
+ishealthcare(params::SimParams, person_id::Integer) =
   nothing!=params.hospital_kernel_params && ishealthcare(params.hospital_kernel_params, person_id)
 uses_phone_tracing(params::SimParams, person_id::Integer) =
   nothing!=params.phone_tracing_params && uses_phone_tracing(params.phone_tracing_params, person_id)
@@ -70,9 +70,9 @@ function load_params(rng=MersenneTwister(0);
         infection_modulation_params::NamedTuple=NamedTuple{}(),
         kwargs...
         )
-        
+
   individuals_df::DataFrame = population
-  
+
   num_individuals = individuals_df |> nrow
 
   dist_incubation_time = LogNormal(1.3669786931887833, 0.5045104580676582)
@@ -81,17 +81,17 @@ function load_params(rng=MersenneTwister(0);
   dist_mild_recovery_time = Uniform(11, 17)
   dist_severe_recovery_time = Uniform(4*7, 8*7)
   dist_death_time = LogNormal(2.610727719719777, 0.44476420066780653)
-  
+
   progressions = Vector{Progression}(undef, num_individuals);
   resample!(rng, progressions, individuals_df.age,
-    dist_incubation_time, 
+    dist_incubation_time,
     dist_symptom_onset_time,
     dist_hospitalization_time,
     dist_mild_recovery_time,
     dist_severe_recovery_time,
     dist_death_time
   )
-  
+
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
 
   make_params(
