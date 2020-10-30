@@ -6,23 +6,23 @@ mutable struct SimState
   rng::MersenneTwister
   time::TimePoint
   queue::EventQueue
-  individuals::Vector{IndividualState}  
+  individuals::Vector{IndividualState}
   forest::InfectionForest
   stats::RunningStats
 
   SimState(rng::AbstractRNG, num_individuals::Integer) = num_individuals <= 0 || num_individuals > typemax(UInt32) ? error("number of individuals must be positive and smaller than $(typemax(UInt32))") : 
     new(
       rng,
-      
+
       0.0,
       EventQueue(),
-      
+
       fill(IndividualState(), num_individuals),
 
       InfectionForest(num_individuals),
 
       RunningStats()
-    ) 
+    )
 end
 
 SimState(num_individuals::Integer; seed::Integer=0) = SimState(MersenneTwister(seed), num_individuals)
@@ -39,7 +39,7 @@ function reset!(state::SimState, rng::AbstractRNG)
   empty!(state.queue)
   reset!(state.forest)
   fill!(state.individuals, IndividualState())
-  state.stats = RunningStats()
+  reset!(state.stats)
   state
 end
 
@@ -55,7 +55,7 @@ freedom(state::SimState, person_id::Integer)::FreedomState = state.individuals[p
 
 quarantine_level(state::SimState, person_id::Integer) = state.individuals[person_id].quarantine_level
 isquarantined(state::SimState, person_id::Integer)::Bool = quarantine_level(state, person_id) != 0
-detected(state::SimState, person_id::Integer)::DetectionStatus = state.individuals[person_id].detected 
+detected(state::SimState, person_id::Integer)::DetectionStatus = state.individuals[person_id].detected
 isdetected(state::SimState, person_id::Integer)::Bool = (Detected == detected(state, person_id))
 
 subjecthealth(state::SimState, event::Event)::HealthState = health(state, subject(event))
@@ -89,19 +89,19 @@ function setdetected!(state::SimState, person_id::Integer, new_detected::Detecti
   nothing
 end
 
-function quarantine_advance!(state::SimState, person_id::Integer, adv_val::Integer) 
+function quarantine_advance!(state::SimState, person_id::Integer, adv_val::Integer)
   orig = state.individuals[person_id]
-  if adv_val >= 0 
+  if adv_val >= 0
     state.individuals[person_id] = @set orig.quarantine_level = orig.quarantine_level+adv_val
   else
-    state.individuals[person_id] = @set orig.quarantine_level = orig.quarantine_level-(-adv_val)    
-  end  
+    state.individuals[person_id] = @set orig.quarantine_level = orig.quarantine_level-(-adv_val)
+  end
   nothing
 end
 
 function quarantine_cancel!(state::SimState, person_id::Integer)
   orig = state.individuals[person_id]
-  state.individuals[person_id] = @set orig.quarantine_level = 0 
+  state.individuals[person_id] = @set orig.quarantine_level = 0
   nothing
 end
 
@@ -112,16 +112,16 @@ registerinfection!(state::SimState, infection::Event) = push!(state.forest, infe
 
 function initialfeed!(state::SimState, num_initial_infections::Integer)
   @assert 0 == time(state)
-  
-  N = length(state.individuals)  
+
+  N = length(state.individuals)
   individuals = 1:N
-  
+
   for _ in 1:num_initial_infections
     person_id = sample(state.rng, individuals)
     event = Event(Val(OutsideInfectionEvent), 0.0, person_id)
     push!(state.queue, event)
   end
-   
+
 end
 
 saveparams(dict, state::SimState, prefix::AbstractString="") = saveparams(dict, state.forest, prefix)

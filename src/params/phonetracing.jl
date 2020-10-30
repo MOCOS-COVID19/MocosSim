@@ -1,10 +1,10 @@
 struct PhoneTracingParams
   isusingapp::BitVector
   detection_prob::Float64
-  detection_delay::Float64  
+  detection_delay::Float64
 end
 
-PhoneTracingParams(N::Integer, detection_prob::Real=1.0, detection_delay::Real=0.5) = 
+PhoneTracingParams(N::Integer, detection_prob::Real=1.0, detection_delay::Real=0.5) =
   PhoneTracingParams(BitVector(undef, N), detection_prob, detection_delay)
 
 function resample!(rng::AbstractRNG, params::PhoneTracingParams, prob::Real)
@@ -15,7 +15,6 @@ function resample!(rng::AbstractRNG, params::PhoneTracingParams, prob::Real)
 end
 
 function resamplebyhouseholds!(rng::AbstractRNG, params::PhoneTracingParams, prob::Real, household_ptrs::Vector{Tuple{Ti,Ti}} where Ti<:Integer)
-  
   num_individuals = length(household_ptrs)
   num_users = rand(rng, Binomial(num_individuals, prob)) # makes the number same as in the independent case
 
@@ -26,7 +25,7 @@ function resamplebyhouseholds!(rng::AbstractRNG, params::PhoneTracingParams, pro
   for (household_start, household_end) in randomized_households
     if num_assigned >= num_users
       break
-    end 
+    end
 
     household = UnitRange(household_start, household_end)
 
@@ -38,11 +37,11 @@ function resamplebyhouseholds!(rng::AbstractRNG, params::PhoneTracingParams, pro
   end
 end
 
-function PhoneTracingParams(rng::AbstractRNG, 
-                             N::Integer, 
-                             usage::Real, 
-                             detection_delay::Real=0.25, 
-                             detection_prob::Real=1.0, 
+function PhoneTracingParams(rng::AbstractRNG,
+                             N::Integer,
+                             usage::Real,
+                             detection_delay::Real=0.25,
+                             detection_prob::Real=1.0,
                              household_ptrs::Union{Nothing,Vector{Tuple{Ti,Ti}} where Ti <: Integer} = nothing)
   params = PhoneTracingParams(N, detection_prob, detection_delay)
   if household_ptrs === nothing
@@ -52,10 +51,6 @@ function PhoneTracingParams(rng::AbstractRNG,
   end
   params
 end
-  
-
-
-
 
 uses_phone_tracing(params::PhoneTracingParams, person_id::Integer) = params.isusingapp[person_id]
 
