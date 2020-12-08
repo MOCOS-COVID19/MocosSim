@@ -32,9 +32,7 @@ function show(io::IO, state::SimState)
 end
 
 function reset!(state::SimState, rng::AbstractRNG)
-  if isa(rng, AbstractRNG)
-    state.rng = rng
-  end
+  state.rng = rng
   state.time=0
   empty!(state.queue)
   reset!(state.forest)
