@@ -8,7 +8,9 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
               else    error("no recovery nor symptoms time defined")
               end
 
-  total_infection_rate = (end_time - start_time) * params.constant_kernel_param
+  strain = strainof(state, source_id)
+
+  total_infection_rate = (end_time - start_time) * straindata(params, strain).constant_kernel_param
 
   total_infection_rate *= spreading(params, source_id)
 
@@ -21,7 +23,7 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
 
   time_dist = Uniform(state.time, end_time - start_time + state.time) # in global time reference frame
 
-  num_individuals = size(params.progressions, 1)
+  num_individuals = numindividuals(params)
 
   for _ in 1:num_infections
     subject_id = sample(state.rng, 1:(num_individuals-1)) # exclude the source itself
@@ -32,16 +34,16 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
     if Healthy == health(state, subject_id)
       infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
       @assert state.time <= infection_time <= (end_time-start_time + state.time)
-      push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, ConstantKernelContact))
+      push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, ConstantKernelContact, strain))
     end
   end
   nothing
 end
 
 function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source_id::Integer, params::SimParams)
-  household = householdof(params,source_id)
+  household = householdof(params, source_id)
 
-  if 1==length(household)
+  if 1 == length(household)
     return
   end
 
@@ -55,7 +57,8 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
 
   max_time = time(state) - start_time + end_time
 
-  mean_infection_time = (length(household)-1) / params.household_kernel_param
+  strain = strainof(state, source_id)
+  mean_infection_time = (length(household)-1) / straindata(params, strain).household_kernel_param
   time_dist = Exponential(mean_infection_time)
 
   for subject_id in household
@@ -73,7 +76,8 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
       infection_time,
       subject_id,
       source_id,
-      HouseholdContact)
+      HouseholdContact,
+      strain)
     )
   end
   nothing

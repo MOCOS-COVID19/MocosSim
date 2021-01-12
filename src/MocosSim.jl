@@ -19,6 +19,7 @@ const TimePoint = Fixed{Int32, 16}
 const TimeDiff = Fixed{Int32, 16}
 const PersonIdx=UInt32
 
+
 include("enums.jl")
 include("event.jl")
 
@@ -37,34 +38,34 @@ include("utils.jl")
 export simulate!
 export Event
 
-function simulate!(state::SimState, 
-                   params::SimParams; 
-                   history::Union{Nothing, Vector{Event}}=nothing, 
+function simulate!(state::SimState,
+                   params::SimParams;
+                   history::Union{Nothing, Vector{Event}}=nothing,
                    execution_history::Union{Nothing, BitVector}=nothing,
                    state_history::Union{Nothing, Vector{IndividualState}}=nothing)
-                         
+
   iter_no = 0
   while true
     if isempty(state.queue)
       break
     end
-      
+
     event = pop!(state.queue)
-        
+
     if nothing !== history
       push!(history, event)
     end
-      
+
     result::Bool = execute!(state, params, event)
-      
+
     if nothing !== execution_history
       push!(execution_history, result)
-    end  
-    
+    end
+
     if nothing !== state_history
       push!(state_history, state.individuals[subject(event)])
     end
-    
+
     iter_no+=1
   end
   nothing
@@ -76,18 +77,18 @@ function simulate!(state::SimState, params::SimParams, callback)
     if isempty(state.queue)
       break
     end
-      
+
     event = pop!(state.queue)
-      
+
     executed::Bool = execute!(state, params, event)
-      
+
     if executed
        should_continue = callback(event, state, params)
        if !should_continue
          break
        end
-    end  
-    
+    end
+
     iter_no+=1
   end
   nothing
