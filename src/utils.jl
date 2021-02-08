@@ -4,7 +4,7 @@ function countuniquesorted(arr::AbstractVector{T}) where T
         count = get(d, val, 0)
         d[val] = count + 1
     end
-    
+
     N = length(d)
     vals = Array{T,1}()
     sizehint!(vals,N)
@@ -14,47 +14,47 @@ function countuniquesorted(arr::AbstractVector{T}) where T
         push!(vals,val)
         push!(counts,count)
     end
-    
+
     return vals,counts
 end
 
 function groupptrs!(
-  headptrs::AbstractVector{Ti}, 
+  headptrs::AbstractVector{Ti},
   tailptrs::AbstractVector{Ti},
-  arr::AbstractVector{T} where T<:Real, 
+  arr::AbstractVector{T} where T<:Real,
   ) where {Ti<:Integer}
 
   N = length(arr)
   @assert N == length(headptrs) == length(tailptrs)
-  
+
   fill!(headptrs, 0)
   fill!(tailptrs, 0)
-    
+
   headptr = 1
   flag = arr[1]
   headptrs[1] = headptr
-    
+
   for i in 2:N
     @assert (arr[i-1] <= arr[i]) "array is not sorted at i=$i" #TODO this condition is not needed
     if flag != arr[i]
       flag = arr[i]
       headptr = i
-    end  
+    end
     headptrs[i] = headptr
   end
 
   headptr = headptrs[end]
   tailptr = N
-  
+
   tailptrs[end] = tailptr
   for i in (N-1):(-1):1
     if headptr != headptrs[i]
       headptr = headptrs[i]
       tailptr = i
-    end 
+    end
     tailptrs[i] = tailptr
   end
-     
+
   headptrs, tailptrs
 end
 

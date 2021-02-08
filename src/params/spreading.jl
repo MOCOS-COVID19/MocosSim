@@ -6,7 +6,7 @@ struct SpreadingParams
   spreading::Vector{Float32}
 end
 
-function SpreadingParams(rng::AbstractRNG, N::Integer; alpha::Real, x0::Real=1, truncation::Real=Inf) 
+function SpreadingParams(rng::AbstractRNG, N::Integer; alpha::Real, x0::Real=1, truncation::Real=Inf)
   dist=truncated(Pareto(alpha, x0), x0, truncation)
   spreading = Vector{Float32}(undef, N)
   rand!(rng, dist, spreading)
