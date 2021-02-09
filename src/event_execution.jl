@@ -305,7 +305,7 @@ function execute!(::Val{TracedEvent}, state::SimState, params::SimParams, event:
     @assert member_health ∉ SA[SevereSymptoms, CriticalSymptoms, Dead] "patient should have already been infected at the hospital"
 
     if Infectious == member_health || MildSymptoms == member_health
-      testing_delay = rand(rng, Exponetial(params.testing_time))
+      testing_delay = rand(state.rng, Exponential(params.testing_time))
       push!(state.queue, Event(Val(DetectionEvent), time(event) + testing_delay, member, FromTracingDetection))
     end
   end
