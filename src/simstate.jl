@@ -62,6 +62,8 @@ subjectfreedom(state::SimState, event::Event)::FreedomState = freedom(state, sub
 sourcehealth(state::SimState, event::Event)::HealthState = health(state, source(event))
 sourcefreedom(state::SimState, event::Event)::FreedomState = freedom(state, source(event))
 
+strainof(state::SimState, person_id::Integer) = strainof(state.forest, person_id)
+
 #forwardinfections(state::SimState, person_id::Integer) = inclusive(state.infections, searchequalrange(state.infections, person_id)...) |> values
 forwardinfections(state::SimState, person_id::Integer) = forwardinfections(state.forest, person_id)
 backwardinfection(state::SimState, person_id::Integer) = backwardinfection(state.forest, person_id)
@@ -108,7 +110,7 @@ setsubjectfreedom!(state::SimState, event::Event, freedom::FreedomState) = setfr
 
 registerinfection!(state::SimState, infection::Event) = push!(state.forest, infection)
 
-function initialfeed!(state::SimState, num_initial_infections::Integer)
+function initialfeed!(state::SimState, num_initial_infections::Integer, strain::StrainKind=ChineseStrain)
   @assert 0 == time(state)
 
   N = length(state.individuals)
@@ -116,10 +118,24 @@ function initialfeed!(state::SimState, num_initial_infections::Integer)
 
   for _ in 1:num_initial_infections
     person_id = sample(state.rng, individuals)
-    event = Event(Val(OutsideInfectionEvent), 0.0, person_id)
+    event = Event(Val(OutsideInfectionEvent), 0.0, person_id, strain)
     push!(state.queue, event)
   end
 
 end
+
+function outsidefeed!(state::SimState, num_initial_infections::Integer, strain::StrainKind=ChineseStrain, infection_time::Real=0.0)
+  N = length(state.individuals)
+  individuals = 1:N
+
+  for _ in 1:num_initial_infections
+    person_id = sample(state.rng, individuals)
+
+    event = Event(Val(OutsideInfectionEvent), infection_time, person_id, strain)
+    push!(state.queue, event)
+  end
+
+end
+
 
 saveparams(dict, state::SimState, prefix::AbstractString="") = saveparams(dict, state.forest, prefix)

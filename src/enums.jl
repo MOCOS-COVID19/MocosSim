@@ -10,11 +10,13 @@
 
 @enum DetectionKind::UInt8 NoDetection=0 OutsideQuarantineDetction=1 FromQuarantineDetection FromTracingDetection
 
-@enum TracingKind::UInt8 begin 
-  NotTraced=0 
+@enum TracingKind::UInt8 begin
+  NotTraced=0
   MildCaseTraced #unused yet
   HospitalTraced #unused yet
   QuarantineTraced #unused yet
-  ClassicalTraced 
-  PhoneTraced 
+  ClassicalTraced
+  PhoneTraced
 end
+
+@enum StrainKind::UInt8 NullStrain ChineseStrain BritishStrain

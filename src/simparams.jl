@@ -10,6 +10,7 @@ include("params/progression.jl")
 include("params/hospital.jl")
 include("params/phonetracing.jl")
 include("params/spreading.jl")
+include("params/strains.jl")
 
 abstract type InfectionModulation end
 
@@ -21,11 +22,10 @@ struct SimParams
 
   progressions::Vector{Progression} # not sure if progressions should be there
 
-  hospital_kernel_params::Union{Nothing, HospitalInfectionParams}  # nothing if hospital kernel not active  
-  friendship_kernel_params::Union{Nothing, FriendshipKernelParams}
+  strain_table::StrainTable
 
-  constant_kernel_param::Float64
-  household_kernel_param::Float64
+  hospital_kernel_params::Union{Nothing, HospitalInfectionParams}  # nothing if hospital kernel not active
+  friendship_kernel_params::Union{Nothing, FriendshipKernelParams}
 
   hospital_detections::Bool
   mild_detection_prob::Float64
@@ -48,6 +48,8 @@ end
 include("params/modulations.jl")
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
+straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)
+
 progressionof(params::SimParams, person_id::Integer) = params.progressions[person_id]
 severityof(params::SimParams, person_id::Integer) = progressionof(params, person_id).severity
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
@@ -95,10 +97,10 @@ function load_params(rng=MersenneTwister(0);
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
 
   make_params(
-    rng, 
-    individuals_df=individuals_df, 
-    progressions=progressions, 
-    infection_modulation_function=infection_modulation_function; 
+    rng,
+    individuals_df=individuals_df,
+    progressions=progressions,
+    infection_modulation_function=infection_modulation_function;
     kwargs...
   )
 end
@@ -109,24 +111,24 @@ function make_params(
   progressions::AbstractArray{Progression},
 
   infection_modulation_function=nothing,
-        
+
   hospital_kernel_param::Float64=0.0,
   healthcare_detection_prob::Float64=0.8,
   healthcare_detection_delay::Float64=1.0,
-  
+
   constant_kernel_param::Float64=1.0,
   household_kernel_param::Float64=1.0,
   friendship_kernel_param::Float64=0.0,
-  
+
   hospital_detections::Bool=true,
   mild_detection_prob::Float64=0.0,
-  
+
   backward_tracing_prob::Float64=0.0,
   backward_detection_delay::Float64=1.0,
-  
+
   forward_tracing_prob::Float64=0.0,
   forward_detection_delay::Float64=1.0,
-  
+
   quarantine_length::Float64=14.0,
   testing_time::Float64=1.0,
 
@@ -136,18 +138,22 @@ function make_params(
 
   spreading_alpha::Union{Nothing,Real}=nothing,
   spreading_x0::Real=1,
-  spreading_truncation::Real=Inf
+  spreading_truncation::Real=Inf,
+
+  british_strain_multiplier::Real=1.70
 )
   sort!(individuals_df, :household_index)
 
   num_individuals = individuals_df |> nrow
-    
+
   @assert num_individuals == length(progressions)
 
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
+  strain_table = make_strains(constant_kernel_param, household_kernel_param, british_multiplier=british_strain_multiplier)
+
   friendship_kernel_params =  if 0 == friendship_kernel_param; nothing
-                        elseif 0.0 < friendship_kernel_param 
+                        elseif 0.0 < friendship_kernel_param
                           FriendshipKernelParams(
                             friendship_kernel_param,
                             Age.(individuals_df.age),
@@ -157,7 +163,7 @@ function make_params(
                         end
 
   hospital_kernel_params =  if 0 == hospital_kernel_param; nothing
-                            elseif 0.0 < hospital_kernel_param; 
+                            elseif 0.0 < hospital_kernel_param;
                               HospitalInfectionParams(
                                 individuals_df.ishealthcare,
                                 (UInt32(1):UInt32(num_individuals))[individuals_df.ishealthcare],
@@ -175,7 +181,7 @@ function make_params(
                           PhoneTracingParams(rng, num_individuals, phone_tracing_usage, phone_detection_delay, 1)
                       else error("tracing_app_usage must be nonnegative, got $phone_tracing_usage")
                       end
-  
+
   spreading_params = if nothing == spreading_alpha; nothing
                   elseif 0.0 < spreading_alpha
                     SpreadingParams(rng, num_individuals, alpha=spreading_alpha, x0=spreading_x0, truncation=spreading_truncation)
@@ -188,22 +194,21 @@ function make_params(
     individuals_df.gender,
 
     progressions,
-    
-    hospital_kernel_params,
+
+    strain_table,
+
     friendship_kernel_params,
-    
-    constant_kernel_param,   
-    household_kernel_param,
-    
+    hospital_kernel_params,
+
     hospital_detections,
     mild_detection_prob,
-    
+
     backward_tracing_prob,
     backward_detection_delay,
-    
+
     forward_tracing_prob,
     forward_detection_delay,
-    
+
     quarantine_length, # quarantine length
     testing_time, # testing time
 

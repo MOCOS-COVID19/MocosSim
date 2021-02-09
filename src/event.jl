@@ -1,36 +1,36 @@
-@enum EventKind::UInt8 begin 
+@enum EventKind::UInt8 begin
 
 # the underlying values are also priorites in case the times are equal
 # therefore the order of definition implies priority
 
   QuarantinedEvent
   DetectionEvent
-  #DetectedFromQuarantineEvent  
+  #DetectedFromQuarantineEvent
   HomeTreatmentSuccessEvent
   QuarantineEndEvent
 
   GoHospitalEvent
-  
+
   #DetectedOutsideQuarantineEvent
   #DetectedFromTracingEvent
 
   TracedEvent
   ReleasedEvent
-  
+
   # the progression events have low priority to let the immediate actions execute
-  BecomeInfectiousEvent 
-  
-  OutsideInfectionEvent 
-  TransmissionEvent 
-  
-  MildSymptomsEvent 
+  BecomeInfectiousEvent
+
+  OutsideInfectionEvent
+  TransmissionEvent
+
+  MildSymptomsEvent
   HomeTreatmentEvent
-  
-  SevereSymptomsEvent 
-  CriticalSymptomsEvent 
+
+  SevereSymptomsEvent
+  CriticalSymptomsEvent
   RecoveryEvent
   DeathEvent
-  
+
   InvalidEvent # should not be executed
 end
 
@@ -40,22 +40,23 @@ struct Event
   source_id::PersonIdx            # 4 bytes
   event_kind::EventKind           # 1 byte
   extra::UInt8
+  strain::StrainKind
 
   #contact_kind::ContactKind       # 1 byte
   #extension::Bool                 # 1 byte
   #detection_kind::DetectionKind   # 1 byte
                                   # alignment = 4 bytes
-  
-  Event() = new(0.0, 0, 0, InvalidEvent, 0)
-  Event(::Val{E}, time::Real, subject::Integer) where E = new(time, subject, 0, E, 0)
-  Event(::Val{OutsideInfectionEvent}, time::Real, subject::Integer) = new(time, subject, 0, OutsideInfectionEvent, UInt8(OutsideContact))
+
+  Event() = new(0.0, 0, 0, InvalidEvent, 0, NullStrain)
+  Event(::Val{E}, time::Real, subject::Integer) where E = new(time, subject, 0, E, 0, NullStrain)
+  Event(::Val{OutsideInfectionEvent}, time::Real, subject::Integer, strain::StrainKind) = new(time, subject, 0, OutsideInfectionEvent, UInt8(OutsideContact), strain)
   Event(::Val{TransmissionEvent}, ::Real, ::Integer) = error("source and contact kind needed for transmission event")
-  Event(::Val{TransmissionEvent}, time::Real, subject::Integer, source::Integer, contact_kind::ContactKind) = new(time, subject, source, TransmissionEvent, UInt8(contact_kind))
-  Event(::Val{QuarantinedEvent}, time::Real, subject::Integer, extension::Bool) = new(time, subject, 0, QuarantinedEvent, UInt8(extension))
+  Event(::Val{TransmissionEvent}, time::Real, subject::Integer, source::Integer, contact_kind::ContactKind, strain::StrainKind) = new(time, subject, source, TransmissionEvent, UInt8(contact_kind), strain)
+  Event(::Val{QuarantinedEvent}, time::Real, subject::Integer, extension::Bool) = new(time, subject, 0, QuarantinedEvent, UInt8(extension), NullStrain)
   Event(::Val{TracedEvent}, ::Real, ::Integer) = error("source and tracing kind must be given for TracedEvent")
-  Event(::Val{TracedEvent}, time::Real, subject::Integer, source::Integer, tracing_kind::TracingKind) = new(time, subject, source, TracedEvent, UInt8(tracing_kind))
+  Event(::Val{TracedEvent}, time::Real, subject::Integer, source::Integer, tracing_kind::TracingKind) = new(time, subject, source, TracedEvent, UInt8(tracing_kind), NullStrain)
   Event(::Val{DetectionEvent}, ::Real, ::Integer) = error("detection kind must be given for detection event")
-  Event(::Val{DetectionEvent}, time::Real, subject::Integer, detectionkind::DetectionKind) = new(time, subject, 0, DetectionEvent, UInt8(detectionkind))
+  Event(::Val{DetectionEvent}, time::Real, subject::Integer, detectionkind::DetectionKind) = new(time, subject, 0, DetectionEvent, UInt8(detectionkind), NullStrain)
 end
 
 time(event::Event) = event.time
@@ -68,10 +69,12 @@ detectionkind(event::Event) = isdetection(event) ? DetectionKind(event.extra) : 
 extension(event::Event) = isquarantine(event) ? Bool(event.extra) : false
 tracingkind(event::Event) = istracing(event) ? TracingKind(event.extra) : NotTraced
 
+strainkind(event::Event) = istransmission(event) ? event.strain : NullStrain
+
 function show(io::IO, event::Event)
   print(io, time(event), ":", kind(event), " ", subject(event))
-  if TransmissionEvent == kind(event) || OutsideContact == kind(event)
-    print(io, " <= ", source(event), " ", contactkind(event))
+  if TransmissionEvent == kind(event) || OutsideInfectionEvent == kind(event)
+    print(io, " <= ", source(event), " ", contactkind(event), " ", strainkind(event))
   elseif QuarantinedEvent == kind(event)
     print(io, " extension=", extension(event))
   elseif TracedEvent == kind(event)

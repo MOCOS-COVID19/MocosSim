@@ -10,8 +10,6 @@ struct Progression
     #Progression(severity::Severity, incubation_time::Real, mild_time::Real, severe_time::Real, recovery_time) = incubation < mild_time < severe_time < recovery_time
 end
 
-
-
 Progression() = Progression(Asymptomatic, missing, missing, missing, missing, missing)
 
 # Asymptotic not allowed as yet (some asserts prevent them)
@@ -30,7 +28,7 @@ function sample_severity(rng::AbstractRNG, age::Real)
   dist = severity_dists[1]
   if age < 0;       error("age should be non-negative")
   elseif age < 40;  dist = severity_dists[1]
-  elseif age < 50;  dist = severity_dists[2]    
+  elseif age < 50;  dist = severity_dists[2]
   elseif age < 60;  dist = severity_dists[3]
   elseif age < 70;  dist = severity_dists[4]
   elseif age < 80;  dist = severity_dists[5]
@@ -46,27 +44,27 @@ function sample_if_death(rng::AbstractRNG, severity::Severity)
   rand(rng) < death_prob
 end
 
-@inline function sample_progression(rng::AbstractRNG, age::Real, 
-    dist_incubation, 
-    dist_symptom_onset, 
-    dist_hospitalization,         
+@inline function sample_progression(rng::AbstractRNG, age::Real,
+    dist_incubation,
+    dist_symptom_onset,
+    dist_hospitalization,
     dist_mild_recovery,
     dist_severe_recovery,
     dist_death_time
   )
 
   severity = sample_severity(rng, age)
- 
+
   mild_symptoms_time = missing
   severe_symptoms_time = missing
   recovery_time = missing
   death_time = missing
-    
+
   incubation_time = rand(rng, dist_incubation)
-   
+
   mild_symptoms_time = incubation_time + rand(rng, dist_symptom_onset)
-  
-  severe_symptoms_time = missing 
+
+  severe_symptoms_time = missing
   recovery_time = missing
   death_time = missing
   if (severity==Severe) || (severity==Critical)
@@ -78,7 +76,7 @@ end
   else
     recovery_time = mild_symptoms_time + rand(rng, dist_mild_recovery)
   end
-  
+
   if sample_if_death(rng, severity)
     death_time = incubation_time + rand(rng, dist_death_time)
     if death_time < severe_symptoms_time
@@ -86,7 +84,7 @@ end
     end
     recovery_time = missing
   end
-    
+
   Progression(
     severity,
     incubation_time |> TimeDiff,
@@ -98,19 +96,19 @@ end
 end
 
 function resample!(
-  rng::AbstractRNG, 
-  progressions, ages::AbstractArray{T} where T <: Real,       
-  dist_incubation_time, 
-  dist_symptom_onset_time, 
+  rng::AbstractRNG,
+  progressions, ages::AbstractArray{T} where T <: Real,
+  dist_incubation_time,
+  dist_symptom_onset_time,
   dist_hospitalization_time,
   dist_mild_recovery_time,
   dist_severe_recovery_time,
   dist_death_time)
 
   for i in 1:length(ages)
-    progressions[i] = sample_progression(rng, ages[i],         
-      dist_incubation_time, 
-      dist_symptom_onset_time, 
+    progressions[i] = sample_progression(rng, ages[i],
+      dist_incubation_time,
+      dist_symptom_onset_time,
       dist_hospitalization_time,
       dist_mild_recovery_time,
       dist_severe_recovery_time,
