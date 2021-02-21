@@ -23,5 +23,5 @@ function show(io::IO, p::SpreadingParams)
   print(io, "Spreading params for ", numindividuals(p), " individuals, distribution=", p.dist)
 end
 
-spreading(p::SpreadingParams, source_id::Integer) = Float32(p.spreading[source_id])
+spreading(p::SpreadingParams, source_id::Integer) = Float64(p.spreading[source_id])
 
