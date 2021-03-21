@@ -43,6 +43,8 @@ struct SimParams
 
   infection_modulation_function::Union{Nothing,InfectionModulation}
   spreading_params::Union{Nothing, SpreadingParams}
+
+  age_multipliers::Vector{Float64}
 end
 
 include("params/modulations.jl")
@@ -55,6 +57,7 @@ severityof(params::SimParams, person_id::Integer) = progressionof(params, person
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
 age(params::SimParams, person_id::Integer) = params.ages[person_id]
 gender(params::SimParams, person_id::Integer) = params.genders[person_id]
+age_multiplier(params::SimParams, person_id::Integer) = get(params.age_multipliers,age(params,person_id)-1,1.0)
 
 socialcompetence(params::SimParams, person_id::Integer) =
   nothing!=params.friendship_kernel_params && socialcompetence(params.friendship_kernel_params, person_id)
@@ -140,7 +143,10 @@ function make_params(
   spreading_x0::Real=1,
   spreading_truncation::Real=Inf,
 
-  british_strain_multiplier::Real=1.70
+  british_strain_multiplier::Real=1.70,
+
+  age_multipliers::Vector{Float64}=[1.0]
+
 )
   sort!(individuals_df, :household_index)
 
@@ -214,7 +220,9 @@ function make_params(
 
     phone_tracing_params,
     infection_modulation_function,
-    spreading_params
+    spreading_params,
+
+    age_multipliers
   )
   params
 end

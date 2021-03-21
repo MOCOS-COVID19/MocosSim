@@ -13,6 +13,8 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
   total_infection_rate = (end_time - start_time) * straindata(params, strain).constant_kernel_param
 
   total_infection_rate *= spreading(params, source_id)
+  
+  total_infection_rate *= age_multiplier(params,source_id)
 
   num_infections = rand(state.rng, Poisson(total_infection_rate))
 
