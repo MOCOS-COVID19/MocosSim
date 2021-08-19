@@ -45,6 +45,7 @@ struct SimParams
 
   infection_modulation_function::Union{Nothing,InfectionModulation}
   infection_travels_function::Union{Nothing,InfectionTravels}
+  travels_frequency::TimePoint
 
   spreading_params::Union{Nothing, SpreadingParams}
 end
@@ -77,6 +78,7 @@ function load_params(rng=MersenneTwister(0);
         infection_modulation_params::NamedTuple=NamedTuple{}(),
         infection_travels_name::Union{Nothing,AbstractString}=nothing,
         infection_travels_params::NamedTuple=NamedTuple{}(),
+        travels_frequency::TimePoint = 0.0,
         kwargs...
         )
 
@@ -109,7 +111,8 @@ function load_params(rng=MersenneTwister(0);
     individuals_df=individuals_df,
     progressions=progressions,
     infection_modulation_function=infection_modulation_function,
-    infection_travels_function=infection_travels_function;
+    infection_travels_function=infection_travels_function,
+    travels_frequency = travels_frequency;
     kwargs...
   )
 end
@@ -121,6 +124,7 @@ function make_params(
 
   infection_modulation_function=nothing,
   infection_travels_function=nothing,
+  travels_frequency::TimePoint=0.0,
 
   hospital_kernel_param::Float64=0.0,
   healthcare_detection_prob::Float64=0.8,
@@ -225,6 +229,7 @@ function make_params(
     phone_tracing_params,
     infection_modulation_function,
     infection_travels_function,
+    travels_frequency,
     spreading_params
   )
   params

@@ -22,6 +22,7 @@
 
   OutsideInfectionEvent
   TransmissionEvent
+  OutsideTransmissionEvent
 
   MildSymptomsEvent
   HomeTreatmentEvent
@@ -32,6 +33,7 @@
   DeathEvent
 
   InvalidEvent # should not be executed
+
 end
 
 struct Event
@@ -50,6 +52,7 @@ struct Event
   Event() = new(0.0, 0, 0, InvalidEvent, 0, NullStrain)
   Event(::Val{E}, time::Real, subject::Integer) where E = new(time, subject, 0, E, 0, NullStrain)
   Event(::Val{OutsideInfectionEvent}, time::Real, subject::Integer, strain::StrainKind) = new(time, subject, 0, OutsideInfectionEvent, UInt8(OutsideContact), strain)
+  Event(::Val{OutsideTransmissionEvent}, time::Real, subject::Integer, strain::StrainKind) = new(time, subject, 0, OutsideTransmissionEvent, UInt8(OutsideContact), strain)
   Event(::Val{TransmissionEvent}, ::Real, ::Integer) = error("source and contact kind needed for transmission event")
   Event(::Val{TransmissionEvent}, time::Real, subject::Integer, source::Integer, contact_kind::ContactKind, strain::StrainKind) = new(time, subject, source, TransmissionEvent, UInt8(contact_kind), strain)
   Event(::Val{QuarantinedEvent}, time::Real, subject::Integer, extension::Bool) = new(time, subject, 0, QuarantinedEvent, UInt8(extension), NullStrain)

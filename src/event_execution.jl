@@ -16,6 +16,7 @@ end
 
 function execute!(kind::EventKind, state::SimState, params::SimParams, event::Event)::Bool
   if     OutsideInfectionEvent==kind;           return execute!(Val(OutsideInfectionEvent), state, params, event)
+  elseif OutsideTransmissionEvent==kind;        return execute!(Val(OutsideTransmissionEvent), state, params, event)
   elseif TransmissionEvent==kind;               return execute!(Val(TransmissionEvent), state, params, event)
   elseif BecomeInfectiousEvent==kind;           return execute!(Val(BecomeInfectiousEvent), state, params, event)
   elseif MildSymptomsEvent==kind;               return execute!(Val(MildSymptomsEvent), state, params, event)
@@ -38,6 +39,22 @@ end
 #
 # transmissions
 #
+function execute!(::Val{OutsideTransmissionEvent}, state::SimState, params::SimParams, event::Event)::Bool
+
+  if params.infection_travels_function == nothing
+    return false
+  end
+  
+  person_id = sample(state.rng, 1:length(state.individuals))
+  strain::StrainKind = ChineseStrain
+  event = Event(Val(OutsideInfectionEvent), state.time, person_id, strain)
+  push!(state.queue, event)
+
+  event = Event(Val(OutsideTransmissionEvent), time(event) + params.travels_frequency, subject(event))
+  push!(state.queue, event)
+  return true
+end
+
 function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimParams, event::Event)::Bool
   if Healthy != subjecthealth(state, event) || Free != subjectfreedom(state, event)
     return false
