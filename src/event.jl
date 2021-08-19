@@ -32,6 +32,7 @@
   DeathEvent
 
   InvalidEvent # should not be executed
+
 end
 
 struct Event
