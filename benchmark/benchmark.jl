@@ -39,6 +39,15 @@ rng = Random.MersenneTwister(0);
     limit_value=0.545455
   ),
 
+  imported_cases_name = "ParabolicImports",
+  imported_cases_params=(
+    days = 30,
+    peak = 20,
+    height = 0.8,
+    minimum = 0.02
+  ),
+  travels_frequency = 0.05 |> TimePoint,
+
   forward_detection_delay=1.75,
   backward_detection_delay=1.75,
   testing_time=3.0
