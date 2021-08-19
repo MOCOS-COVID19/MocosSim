@@ -6,7 +6,7 @@ Base.@kwdef struct Holiday <: InfectionTravels
   end
   
   function (f::Holiday)(state::SimState, params::SimParams, event::Event, infection_time::Real=0.0)
-    @assert kind(event) == OutsideInfectionEvent
+    @assert kind(event) == OutsideTransmissionEvent
     ck = contactkind(event)
     #if ConstantKernelContact !== ck && SporadicContact !== ck && FriendshipContact !== ck
     #  return true # do not affect other types of contact than "outer" ones

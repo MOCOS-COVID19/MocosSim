@@ -122,7 +122,7 @@ function initialfeed!(state::SimState, num_initial_infections::Integer, strain::
     push!(state.queue, event)
   end
 
-  event = Event(Val(OutsideTransmissionEvent), 0.0, subject(event))
+  event = Event(Val(OutsideTransmissionEvent), 0.0)
   push!(state.queue, event)
 
 end
