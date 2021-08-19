@@ -122,6 +122,9 @@ function initialfeed!(state::SimState, num_initial_infections::Integer, strain::
     push!(state.queue, event)
   end
 
+  event = Event(Val(OutsideTransmissionEvent), 0.0, subject(event))
+  push!(state.queue, event)
+
 end
 
 function outsidefeed!(state::SimState, num_initial_infections::Integer, strain::StrainKind=ChineseStrain, infection_time::Real=0.0)

@@ -47,6 +47,11 @@ struct SimParams
   infection_modulation_function::Union{Nothing,InfectionModulation}
   screening_params::Union{Nothing, ScreeningParam}
   infection_travels_function::Union{Nothing,InfectionTravels}
+<<<<<<< HEAD
+=======
+  travels_frequency::TimePoint
+
+>>>>>>> create event to outside trasmission
   spreading_params::Union{Nothing, SpreadingParams}
 end
 
@@ -80,6 +85,7 @@ function load_params(rng=MersenneTwister(0);
         screening_params::Union{Nothing,ScreeningParams}=nothing,
         infection_travels_name::Union{Nothing,AbstractString}=nothing,
         infection_travels_params::NamedTuple=NamedTuple{}(),
+        travels_frequency::TimePoint = 0.0,
         kwargs...
         )
 
@@ -112,8 +118,13 @@ function load_params(rng=MersenneTwister(0);
     individuals_df=individuals_df,
     progressions=progressions,
     infection_modulation_function=infection_modulation_function,
+<<<<<<< HEAD
     screening_params=screening_params;
     infection_travels_function=infection_travels_function;
+=======
+    infection_travels_function=infection_travels_function,
+    travels_frequency = travels_frequency;
+>>>>>>> create event to outside trasmission
     kwargs...
   )
 end
@@ -125,6 +136,7 @@ function make_params(
 
   infection_modulation_function=nothing,
   infection_travels_function=nothing,
+  travels_frequency::TimePoint=0.0,
 
   screening_params::Union{Nothing,ScreeningParams}=nothing,
 
@@ -232,6 +244,7 @@ function make_params(
     infection_modulation_function,
     screening_params,
     infection_travels_function,
+    travels_frequency,
     spreading_params
   )
   params
