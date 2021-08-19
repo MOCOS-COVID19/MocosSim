@@ -48,6 +48,10 @@ function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimPara
     return false
   end
 
+  if params.infection_travels_function !== nothing && !params.infection_travels_function(state, params, event)::Bool
+    return false
+  end
+
   setsubjecthealth!(state, event, Incubating)
 
   registerinfection!(state, event)

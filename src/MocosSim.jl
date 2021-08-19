@@ -89,6 +89,13 @@ function simulate!(state::SimState, params::SimParams, callback)
        end
     end
 
+    if  params.infection_travels_function !== nothing && iter_no %5 == 0
+      person_id = sample(state.rng, 1:length(state.individuals))
+      strain::StrainKind = ChineseStrain
+      event = Event(Val(OutsideInfectionEvent), state.time, person_id, strain)
+      push!(state.queue, event)
+    end
+
     iter_no+=1
   end
   nothing
