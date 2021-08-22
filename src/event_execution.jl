@@ -72,7 +72,7 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
   @assert contactkind(event) == HospitalContact || source_freedom ∉ SA[Hospitalized, Released]
 
   # household contact conditions
-  # if it is an infection inside household and either source or subject are closed in home the event can not happen
+  # if it is an infection outside household and either source or subject are closed in home the event can not happen
   if (contactkind(event) != HouseholdContact) && ((HomeTreatment == source_freedom) || (HomeQuarantine == source_freedom) || (HomeQuarantine == subject_freedom))
     return false
   end
@@ -128,7 +128,7 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
 
   enqueue_transmissions!(state, Val(ConstantKernelContact), event.subject_id, params)
   enqueue_transmissions!(state, Val(HouseholdContact), event.subject_id, params)
-  enqueue_transmissions!(state, Val(FriendshipContact), event.subject_id, params)
+  enqueue_transmissions!(state, Val(AgeCouplingContact), event.subject_id, params)
   # hospital transmissions are enqueued in GoHospitalEvent
 
   detectioncheck!(state, params, subject_id)

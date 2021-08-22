@@ -24,6 +24,12 @@ rng = Random.MersenneTwister(0);
   household_kernel_param=0.07,
   british_strain_multiplier=1.7,
 
+  age_coupling_thresholds=[0, 18, 40],
+  age_coupling_weights=[1.1 1.2 1.3;
+                        2.1 2.2 2.3;
+                        3.1 3.2 3.3],
+  age_coupling_use_genders=false,
+
   infection_modulation_name="TanhModulation",
   infection_modulation_params=(
     scale=12500,
