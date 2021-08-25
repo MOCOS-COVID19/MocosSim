@@ -23,7 +23,7 @@ function (f::TanhModulation)(state::AbstractSimState, ::AbstractSimParams, event
   x = (fear - f.loc) / f.scale
   scaling = ((1 - f.limit_value) / 2)
   base = (1 - (1 - f.limit_value) / 2)
-  rand(state.rng) < -tanh(x) * scaling + base
+  rand(state.rng) < (-tanh(x) * scaling + base) / max(1, f.limit_value)
 end
 
 # This all to avoid using @eval and others
