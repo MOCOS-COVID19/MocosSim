@@ -1,8 +1,10 @@
 include("state/individualstate.jl")
 include("state/runningstats.jl")
 
+abstract type AbstractSimState end
+
 # the mutable part of the simulation
-mutable struct SimState
+mutable struct SimState <: AbstractSimState
   rng::MersenneTwister
   time::TimePoint
   queue::EventQueue
@@ -41,7 +43,7 @@ function reset!(state::SimState, rng::AbstractRNG)
   state
 end
 
-time(state) = state.time
+time(state::SimState) = state.time
 numindividuals(state::SimState) = length(state.individuals)
 
 reset!(state::SimState) = reset!(state::SimState, state.rng)
@@ -63,6 +65,9 @@ sourcehealth(state::SimState, event::Event)::HealthState = health(state, source(
 sourcefreedom(state::SimState, event::Event)::FreedomState = freedom(state, source(event))
 
 strainof(state::SimState, person_id::Integer) = strainof(state.forest, person_id)
+numdetected(state::SimState) = numdetected(state.stats)
+numdead(state::SimState) = numdead(state.stats)
+
 
 #forwardinfections(state::SimState, person_id::Integer) = inclusive(state.infections, searchequalrange(state.infections, person_id)...) |> values
 forwardinfections(state::SimState, person_id::Integer) = forwardinfections(state.forest, person_id)

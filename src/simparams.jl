@@ -3,19 +3,21 @@ using Distributions
 #using FunctionWrappers
 
 const Age=UInt8
+abstract type AbstractSimParams end
+
+abstract type InfectionModulation end
 
 include("params/age_coupling.jl")
 include("params/households.jl")
 include("params/friendship.jl")
+include("params/modulations.jl")
 include("params/progression.jl")
 include("params/hospital.jl")
 include("params/phonetracing.jl")
 include("params/spreading.jl")
 include("params/strains.jl")
 
-abstract type InfectionModulation end
-
-struct SimParams
+struct SimParams <: AbstractSimParams
   household_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}  # (i1,i2) where i1 and i2 are the indices of first and last member of the household
 
   ages::Vector{Age}
@@ -46,7 +48,7 @@ struct SimParams
   spreading_params::Union{Nothing, SpreadingParams}
 end
 
-include("params/modulations.jl")
+
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
 straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)
