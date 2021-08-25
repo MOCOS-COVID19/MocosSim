@@ -6,8 +6,6 @@ Base.@kwdef struct TanhModulation <: InfectionModulation
   scale::Float64
   limit_value::Float64
 end
-#TanhModulation(;weight_detected::Real, weight_deaths::Real, loc::Real, scale::Real, limit_value::Real) =
-#  TanhModulation(weight_detected, weight_deaths, loc, scale, limit_value)
 
 function (f::TanhModulation)(state::SimState, ::SimParams, event::Event)
   @assert kind(event) == TransmissionEvent
@@ -25,7 +23,7 @@ function (f::TanhModulation)(state::SimState, ::SimParams, event::Event)
   x = (fear - f.loc) / f.scale
   scaling = ((1 - f.limit_value) / 2)
   base = (1 - (1 - f.limit_value) / 2)
-  rand(state.rng) < -tanh(x) * scaling + base
+  rand(state.rng) < (-tanh(x) * scaling + base) / max(1, f.limit_value)
 end
 
 # This all to avoid using @eval and others
