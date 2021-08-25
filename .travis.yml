@@ -1,9 +1,0 @@
-dist: bionic
-language: julia
-julia:
-  - 1.0.5
-  - 1.5.0
-  - 1.5.3
-script:
-    - julia -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
-    - julia benchmark.jl
