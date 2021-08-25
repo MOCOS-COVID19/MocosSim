@@ -48,10 +48,11 @@ struct SimParams <: AbstractSimParams
   phone_tracing_params::Union{Nothing, PhoneTracingParams}
 
   infection_modulation_function::Union{Nothing,InfectionModulation}
-
+  screening_params::Union{Nothing, ScreeningParam}
   spreading_params::Union{Nothing, SpreadingParams}
 end
 
+include("params/screening.jl")
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
 straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)
@@ -76,6 +77,7 @@ function load_params(rng=MersenneTwister(0);
         population::DataFrame,
         infection_modulation_name::Union{Nothing,AbstractString}=nothing,
         infection_modulation_params::NamedTuple=NamedTuple{}(),
+        screening_params::Union{Nothing,ScreeningParams}=nothing,
         kwargs...
         )
 
@@ -106,7 +108,8 @@ function load_params(rng=MersenneTwister(0);
     rng,
     individuals_df=individuals_df,
     progressions=progressions,
-    infection_modulation_function=infection_modulation_function;
+    infection_modulation_function=infection_modulation_function,
+    screening_params=screening_params;
     kwargs...
   )
 end
@@ -117,6 +120,8 @@ function make_params(
   progressions::AbstractArray{Progression},
 
   infection_modulation_function=nothing,
+
+  screening_params::Union{Nothing,ScreeningParams}=nothing,
 
   hospital_kernel_param::Float64=0.0,
   healthcare_detection_prob::Float64=0.8,
@@ -226,6 +231,7 @@ function make_params(
 
     phone_tracing_params,
     infection_modulation_function,
+    screening_params,
     spreading_params
   )
   params
