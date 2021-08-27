@@ -2,12 +2,10 @@ module MocosSim
 
 __precompile__(true)
 
-#using CSV
 using DataFrames
 using Distributions
 using FixedPointNumbers
 using LinearAlgebra
-#using ProgressMeter
 using Random
 using SaferIntegers
 using Setfield
