@@ -1,7 +1,7 @@
 @testset "PopulationGrouping" begin
   @testset "ExampleGrouping" begin
-    num_groups = 5
-    num_individuals = 20
+    num_groups = 100
+    num_individuals = 100
     rng = MersenneTwister(13)
     group_ids = rand(rng, 1:num_groups, num_individuals)
     @test minimum(group_ids) > 0
@@ -11,7 +11,7 @@
 
     @test MocosSim.numgroups(grouping) == num_groups
 
-    @testset "Every group has the right person" begin
+    @testset "Every group has the right people" begin
       for group_id in 1:num_groups
         group = MocosSim.getgroup(grouping, group_id)
 

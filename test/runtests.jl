@@ -3,8 +3,9 @@ using Test
 using Random
 
 tests = [
-  "population_grouping"
-  "matrix_alias_sampler"
+  "age_coupling",
+  "matrix_alias_sampler",
+  "population_grouping",
 ]
 
 if length(ARGS) > 0

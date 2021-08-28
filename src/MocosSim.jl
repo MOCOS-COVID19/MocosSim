@@ -45,7 +45,6 @@ function simulate!(state::SimState,
                    history::Union{Nothing, Vector{Event}}=nothing,
                    execution_history::Union{Nothing, BitVector}=nothing,
                    state_history::Union{Nothing, Vector{IndividualState}}=nothing)
-  println("UPDATED")
   iter_no = 0
   while true
     if isempty(state.queue)
