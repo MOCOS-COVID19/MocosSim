@@ -9,11 +9,11 @@ end
 #TanhModulation(;weight_detected::Real, weight_deaths::Real, loc::Real, scale::Real, limit_value::Real) =
 #  TanhModulation(weight_detected, weight_deaths, loc, scale, limit_value)
 
-function (f::TanhModulation)(state::SimState, params::SimParams, event::Event)
+function (f::TanhModulation)(state::SimState, ::SimParams, event::Event)
   @assert kind(event) == TransmissionEvent
 
   ck = contactkind(event)
-  if ConstantKernelContact !== ck && SporadicContact !== ck && FriendshipContact !== ck
+  if ConstantKernelContact !== ck && AgeCouplingContact !== ck
     return true # do not affect other types of contact than "outer" ones
   end
 

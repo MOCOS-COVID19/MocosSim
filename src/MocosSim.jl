@@ -1,8 +1,12 @@
 module MocosSim
 
+using Distributions: minimum
+using DataStructures: minimum
+using LinearAlgebra: AbstractMatrix
 __precompile__(true)
 
 using DataFrames
+using DataStructures
 using Distributions
 using FixedPointNumbers
 using LinearAlgebra
@@ -12,11 +16,13 @@ using Setfield
 using StaticArrays
 
 import Base.show
+import Distributions.sample
 
 const TimePoint = Fixed{Int32, 16}
 const TimeDiff = Fixed{Int32, 16}
 const PersonIdx=UInt32
 
+include("utils.jl")
 
 include("enums.jl")
 include("event.jl")
@@ -31,8 +37,6 @@ include("simparams.jl")
 include("event_execution.jl")
 include("infection_kernels.jl")
 
-include("utils.jl")
-
 export simulate!
 export Event
 
@@ -41,7 +45,6 @@ function simulate!(state::SimState,
                    history::Union{Nothing, Vector{Event}}=nothing,
                    execution_history::Union{Nothing, BitVector}=nothing,
                    state_history::Union{Nothing, Vector{IndividualState}}=nothing)
-
   iter_no = 0
   while true
     if isempty(state.queue)

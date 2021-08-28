@@ -1,3 +1,8 @@
+include("utils/alias_sampling.jl")
+include("utils/matrix_sampler.jl")
+include("utils/population_grouping.jl")
+include("utils/coupling_sampler.jl")
+
 function countuniquesorted(arr::AbstractVector{T}) where T
     d = Dict{T,Int}()
     for val in arr

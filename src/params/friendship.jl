@@ -1,5 +1,3 @@
-include("../random_sampling/alias_sampling.jl")
-
 const SocialCompetence = Normed{UInt16,16}
 const CategoryIdx = UInt8
 const InCategoryIdx = PersonIdx
@@ -28,15 +26,15 @@ const num_friendship_categories = 2*max_age+2
 end
 
 function FriendshipSampler(
-  ages::AbstractVector{T} where T<:Integer, 
-  genders::AbstractVector{Bool}, 
-  social_competences::AbstractVector{T} where T <: Real, 
-  alpha::Real = 0.75, 
+  ages::AbstractVector{T} where T<:Integer,
+  genders::AbstractVector{Bool},
+  social_competences::AbstractVector{T} where T <: Real,
+  alpha::Real = 0.75,
   beta::Real = 1.6)
-    
+
   num_individuals = length(ages)
   @assert num_individuals == length(genders) == length(social_competences)
-  
+
   categories = [Vector{PersonIdx}() for _ in 1:num_friendship_categories]
   for ii in 1:num_individuals
       push!(categories[friendship_to_idx(ages[ii], genders[ii])], ii)
@@ -75,7 +73,7 @@ function FriendshipSampler(
   return FriendshipSampler(categories_selectors, category_samplers, categories)
 end
 
-FriendshipSampler(population::DataFrame, alpha::Real = 0.75, beta::Real = 1.6) = 
+FriendshipSampler(population::DataFrame, alpha::Real = 0.75, beta::Real = 1.6) =
     FriendshipSampler(population.age, population.gender, population.social_competence, alpha, beta)
 
 function friend_sample(fs::FriendshipSampler, age::Integer, gender::Bool, rng=Random.GLOBAL_RNG)
@@ -90,7 +88,7 @@ struct FriendshipKernelParams
 end
 
 function FriendshipKernelParams(
-  kernel_constant::Real, 
+  kernel_constant::Real,
   ages::AbstractVector{Age},
   genders::AbstractVector{Bool},
   social_competences::Vector{SocialCompetence}) #concrete type for direct storage
@@ -98,11 +96,11 @@ function FriendshipKernelParams(
   @assert all(0 .<= ages .<= max_age)
 
   FriendshipKernelParams(
-    kernel_constant, 
-    social_competences, 
+    kernel_constant,
+    social_competences,
     FriendshipSampler(
-      ages, 
-      genders, 
+      ages,
+      genders,
       social_competences))
 end
 socialcompetence(p::FriendshipKernelParams, person_id::Integer) = p.social_competences[person_id]

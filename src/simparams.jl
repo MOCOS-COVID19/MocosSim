@@ -4,6 +4,7 @@ using Distributions
 
 const Age=UInt8
 
+include("params/age_coupling.jl")
 include("params/households.jl")
 include("params/friendship.jl")
 include("params/progression.jl")
@@ -24,8 +25,8 @@ struct SimParams
 
   strain_table::StrainTable
 
+  age_coupling_params::Union{Nothing, AgeCouplingParams} # nothing if kernel not active
   hospital_kernel_params::Union{Nothing, HospitalInfectionParams}  # nothing if hospital kernel not active
-  friendship_kernel_params::Union{Nothing, FriendshipKernelParams}
 
   hospital_detections::Bool
   mild_detection_prob::Float64
@@ -118,7 +119,6 @@ function make_params(
 
   constant_kernel_param::Float64=1.0,
   household_kernel_param::Float64=1.0,
-  friendship_kernel_param::Float64=0.0,
 
   hospital_detections::Bool=true,
   mild_detection_prob::Float64=0.0,
@@ -140,7 +140,12 @@ function make_params(
   spreading_x0::Real=1,
   spreading_truncation::Real=Inf,
 
-  british_strain_multiplier::Real=1.70
+  british_strain_multiplier::Real=1.70,
+  delta_strain_multiplier::Real=1.7*1.5,
+
+  age_coupling_thresholds::Union{Nothing, AbstractArray{T} where T<:Real},
+  age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real},
+  age_coupling_use_genders::Bool,
 )
   sort!(individuals_df, :household_index)
 
@@ -150,16 +155,18 @@ function make_params(
 
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
-  strain_table = make_strains(constant_kernel_param, household_kernel_param, british_multiplier=british_strain_multiplier)
+  strain_table = make_strains(constant_kernel_param, household_kernel_param, british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier)
 
-  friendship_kernel_params =  if 0 == friendship_kernel_param; nothing
-                        elseif 0.0 < friendship_kernel_param
-                          FriendshipKernelParams(
-                            friendship_kernel_param,
-                            Age.(individuals_df.age),
-                            individuals_df.gender,
-                            individuals_df.social_competence)
-                        else error("bad condition for friendship kernel")
+  age_coupling_kernel_params =  if nothing === age_coupling_weights && nothing === age_coupling_thresholds; nothing
+                        elseif age_coupling_weights !== nothing && age_coupling_thresholds !== nothing
+                          @assert minimum(individuals_df.age) >= 0
+                          @assert maximum(individuals_df.age) * (age_coupling_use_genders+1) < typemax(GroupIdx)
+                          AgeCouplingParams(
+                            individuals_df.age,
+                            age_coupling_use_genders === nothing ? individuals_df.gender : nothing,
+                            age_coupling_thresholds, age_coupling_weights,
+                            )
+                        else error("age couplig params not fully given")
                         end
 
   hospital_kernel_params =  if 0 == hospital_kernel_param; nothing
@@ -182,7 +189,7 @@ function make_params(
                       else error("tracing_app_usage must be nonnegative, got $phone_tracing_usage")
                       end
 
-  spreading_params = if nothing == spreading_alpha; nothing
+  spreading_params = if nothing === spreading_alpha; nothing
                   elseif 0.0 < spreading_alpha
                     SpreadingParams(rng, num_individuals, alpha=spreading_alpha, x0=spreading_x0, truncation=spreading_truncation)
                   else error("spreading_alpha must be larger than 0, got $spreading_alpha")
@@ -197,7 +204,7 @@ function make_params(
 
     strain_table,
 
-    friendship_kernel_params,
+    age_coupling_kernel_params,
     hospital_kernel_params,
 
     hospital_detections,
@@ -236,8 +243,8 @@ function saveparams(dict, p::SimParams)
   dict["tracing/testing_time"] = p.testing_time
 
   saveparams(dict, p.progressions, "progressions/")
-  nothing==p.hospital_kernel_params || saveparams(dict, p.hospital_kernel_params, "hospital/")
-  nothing==p.phone_tracing_params || saveparams(dict, p.phone_tracing_params, "phone_tracing/")
-  nothing==p.spreading_params || saveparams(dict, p.spreading_params, "spreading")
+  nothing===p.hospital_kernel_params || saveparams(dict, p.hospital_kernel_params, "hospital/")
+  nothing===p.phone_tracing_params || saveparams(dict, p.phone_tracing_params, "phone_tracing/")
+  nothing===p.spreading_params || saveparams(dict, p.spreading_params, "spreading")
   nothing
 end

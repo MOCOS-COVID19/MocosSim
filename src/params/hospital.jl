@@ -2,7 +2,7 @@ struct HospitalInfectionParams
     ishealthcare::BitVector
     hospital_staff_ids::Vector{PersonIdx}
     kernel_constant::Float64
-    
+
     healthcare_detection_prob::Float64
     healthcare_detection_delay::Float64
   end
