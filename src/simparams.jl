@@ -143,9 +143,9 @@ function make_params(
   british_strain_multiplier::Real=1.70,
   delta_strain_multiplier::Real=1.7*1.5,
 
-  age_coupling_thresholds::Union{Nothing, AbstractArray{T} where T<:Real},
-  age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real},
-  age_coupling_use_genders::Bool,
+  age_coupling_thresholds::Union{Nothing, AbstractArray{T} where T<:Real}=nothing,
+  age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
+  age_coupling_use_genders::Bool=false,
 )
   sort!(individuals_df, :household_index)
 
