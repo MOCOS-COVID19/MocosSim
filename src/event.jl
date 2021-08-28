@@ -31,6 +31,8 @@
   RecoveryEvent
   DeathEvent
 
+  ScreenigEvent
+
   InvalidEvent # should not be executed
 end
 
@@ -57,6 +59,7 @@ struct Event
   Event(::Val{TracedEvent}, time::Real, subject::Integer, source::Integer, tracing_kind::TracingKind) = new(time, subject, source, TracedEvent, UInt8(tracing_kind), NullStrain)
   Event(::Val{DetectionEvent}, ::Real, ::Integer) = error("detection kind must be given for detection event")
   Event(::Val{DetectionEvent}, time::Real, subject::Integer, detectionkind::DetectionKind) = new(time, subject, 0, DetectionEvent, UInt8(detectionkind), NullStrain)
+  Event(::Val{ScreenigEvent}, time::Real) = new(time, 0, 0, ScreenigEvent, 0, NullStrain)
 end
 
 time(event::Event) = event.time

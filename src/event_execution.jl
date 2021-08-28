@@ -30,11 +30,16 @@ function execute!(kind::EventKind, state::SimState, params::SimParams, event::Ev
   elseif TracedEvent==kind;                     return execute!(Val(TracedEvent), state, params, event)
   elseif QuarantinedEvent==kind;                return execute!(Val(QuarantinedEvent), state, params, event)
   elseif QuarantineEndEvent==kind;              return execute!(Val(QuarantineEndEvent), state, params, event)
+  elseif ScreenigEvent==kind;                   return execute!(Val(ScreenigEvent), state, params, event)
   else error("unsupported event kind $kind")
   end
   return true
 end
 
+function execute!(::Val{ScreenigEvent}, state::SimState, params::SimParams, event::Event)::Bool
+  screening!(state, params, event)
+  return true
+end
 #
 # transmissions
 #
