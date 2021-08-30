@@ -6,10 +6,8 @@ Base.@kwdef struct TanhModulation <: InfectionModulation
   scale::Float64
   limit_value::Float64
 end
-#TanhModulation(;weight_detected::Real, weight_deaths::Real, loc::Real, scale::Real, limit_value::Real) =
-#  TanhModulation(weight_detected, weight_deaths, loc, scale, limit_value)
 
-function (f::TanhModulation)(state::SimState, ::SimParams, event::Event)
+function (f::TanhModulation)(state::AbstractSimState, ::AbstractSimParams, event::Event)
   @assert kind(event) == TransmissionEvent
 
   ck = contactkind(event)
@@ -17,9 +15,9 @@ function (f::TanhModulation)(state::SimState, ::SimParams, event::Event)
     return true # do not affect other types of contact than "outer" ones
   end
 
-  num_detected = numdetected(state.stats)
-  num_deaths = numdead(state.stats)
   num_days = time(state)
+  num_detected = numdetected(state)
+  num_deaths = numdead(state)
 
   fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths + num_days * f.weight_days
   x = (fear - f.loc) / f.scale

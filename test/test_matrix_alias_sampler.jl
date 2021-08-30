@@ -19,7 +19,5 @@
     theoretical_probs = example_rates ./ sum(example_rates, dims=1)
 
     @test maximum(abs.(empirial_probs .- theoretical_probs)) < 3/sqrt(num_samples)
-
-
   end
 end
