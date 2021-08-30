@@ -1,29 +1,32 @@
-include("../src/MocosSim.jl")
-
-include("enums.jl")
-include("event.jl")
 
 @testset "InfectionModulations" begin
-  state = MocosSim.SimState(3)
-  params = Missing
-  strain::StrainKind = NullStrain
-  contact_kind::ContactKind = ConstantKernelContact
-  event = Event(Val(TransmissionEvent), 0.0, 0, 0, contact_kind, strain)
-  @testset "TanhModulation" begin
-    weight_detected::Float64 = 0
-    weight_deaths::Float64 = 0
-    weight_days::Float64 = 1
-    loc::Float64 = 10
-    scale::Float64 = 1
-    limit_value::Float64 = 0.0
-    rng = MersenneTwister(13)
+  struct MockSimParams <: MocosSim.AbstractSimParams end
+  struct MockSimState <: MocosSim.AbstractSimState
+    rng
+  end
 
-    modulation = MocosSim.TanhModulation(weight_detected, weight_deaths, weight_days, loc, scale,
-                                         limit_value)
-    state.time = 100
+  MocosSim.time(::MockSimState) = 100
+  MocosSim.numdead(::MockSimState) = 0
+  MocosSim.numdetected(::MockSimState) = 0
+
+  state = MockSimState(MersenneTwister(13))
+  params = MockSimParams()
+
+  strain::MocosSim.StrainKind = MocosSim.NullStrain
+  contact_kind::MocosSim.ContactKind = MocosSim.ConstantKernelContact
+  event = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, contact_kind, strain)
+  @testset "TanhModulation" begin
+    modulation = MocosSim.TanhModulation(
+      weight_detected=0,
+      weight_deaths=0,
+      weight_days=1,
+      loc=10.0,
+      scale=1.0,
+      limit_value=0.0)
+
     @test modulation(state, params, event) == false
 
-    household_event = Event(Val(HouseholdContact), 0.0, 0, 0, contact_kind, strain)
+    household_event = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.HouseholdContact, strain)
     @test modulation(state, params, household_event) == true
   end
 end
