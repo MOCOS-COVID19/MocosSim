@@ -46,7 +46,7 @@ rng = Random.MersenneTwister(0);
     height = 0.8,
     minimum = 0.02
   ),
-  travels_frequency = 0.05 |> TimePoint,
+  travels_frequency = 0.05 |> MocosSim.TimePoint,
 
   forward_detection_delay=1.75,
   backward_detection_delay=1.75,
