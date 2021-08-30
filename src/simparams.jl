@@ -7,6 +7,8 @@ abstract type AbstractSimParams end
 
 abstract type InfectionModulation end
 
+abstract type ImportedCases end
+
 include("params/age_coupling.jl")
 include("params/households.jl")
 include("params/friendship.jl")
@@ -51,7 +53,6 @@ struct SimParams <: AbstractSimParams
   spreading_params::Union{Nothing, SpreadingParams}
 end
 
-include("params/modulations.jl")
 include("params/travels.jl")
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
