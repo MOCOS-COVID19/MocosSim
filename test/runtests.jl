@@ -6,10 +6,12 @@ using MocosSim
 using Test
 using Random
 
+import MocosSim: time, numdead, numdetected
+
 tests = [
-  "age_coupling",
-  "matrix_alias_sampler",
-  "population_grouping",
+#  "age_coupling",
+#  "matrix_alias_sampler",
+#  "population_grouping",
   "modulations"
 ]
 
