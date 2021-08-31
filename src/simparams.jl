@@ -49,13 +49,11 @@ struct SimParams
   infection_travels_function::Union{Nothing,InfectionTravels}
   travels_frequency::TimePoint
   spreading_params::Union{Nothing, SpreadingParams}
-  screening_params
 end
 
 include("params/modulations.jl")
 include("params/screening.jl")
 include("params/travels.jl")
-include("params/screening.jl")
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
 straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)
@@ -80,7 +78,6 @@ function load_params(rng=MersenneTwister(0);
         population::DataFrame,
         infection_modulation_name::Union{Nothing,AbstractString}=nothing,
         infection_modulation_params::NamedTuple=NamedTuple{}(),
-        screening_params::Union{Nothing,ScreeningParams}=nothing,
         infection_travels_name::Union{Nothing,AbstractString}=nothing,
         infection_travels_params::NamedTuple=NamedTuple{}(),
         travels_frequency::TimePoint = 0.0,
@@ -132,8 +129,6 @@ function make_params(
   infection_modulation_function=nothing,
   infection_travels_function=nothing,
   travels_frequency::TimePoint=0.0,
-  screening_params::Union{Nothing, ScreeningParams}=nothing,
-
   screening_params::Union{Nothing,ScreeningParams}=nothing,
 
   hospital_kernel_param::Float64=0.0,
@@ -241,8 +236,7 @@ function make_params(
     screening_params,
     infection_travels_function,
     travels_frequency,
-    spreading_params,
-    screening_params
+    spreading_params
   )
   params
 end
