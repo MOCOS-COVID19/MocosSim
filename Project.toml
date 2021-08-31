@@ -1,7 +1,7 @@
 name = "MocosSim"
-uuid = "af72bc66-7bc2-4ee8-90df-e21de508fcd9"
+uuid = "af72bc66-7bc2-4ee8-90df-e21de508fcda"
 authors = ["Tomasz Ożański <tomasz.ozanski@pwr.edu.pl>"]
-version = "0.3.5"
+version = "0.3.6"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
