@@ -13,10 +13,10 @@ function (f::ParabolicOutsideCases)(state::AbstractSimState, ::AbstractSimParams
   N = length(state.individuals)
   individuals = 1:N
 
-  for infection_time in 0.0:f.frequency:time_limit
+  for infection_time in 0.0:f.frequency:f.time_limit
     if rand(state.rng) < max((Float64(-abs(infection_time-f.peak)^2)*f.height)/days + f.height, f.minimum)
       person_id = sample(state.rng, individuals)
-      event = Event(Val(OutsideInfectionEvent), infection_time, person_id, strain)
+      event = Event(Val(OutsideInfectionEvent), infection_time, person_id, f.strain)
       push!(state.queue, event)
     end
   end
@@ -35,7 +35,7 @@ function (f::InstantOusideCases)(state::AbstractSimState, ::AbstractSimParams)
 
   for _ in 1:f.num_infections
     person_id = sample(state.rng, individuals)
-    event = Event(Val(OutsideInfectionEvent), f.import_time, person_id, strain)
+    event = Event(Val(OutsideInfectionEvent), f.import_time, person_id, f.strain)
     push!(state.queue, event)
   end
 end
