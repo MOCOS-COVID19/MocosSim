@@ -95,19 +95,4 @@ function simulate!(state::SimState, params::SimParams, callback)
   nothing
 end
 
-function outsidefeed!(state::SimState, params::SimParams,time_limit::TimePoint=typemax(TimePoint), strain::StrainKind=ChineseStrain)
-  N = length(state.individuals)
-  individuals = 1:N
-
-  for infection_time in 0.0:params.travels_frequency:time_limit
-    if params.imported_cases_function(state, params, infection_time)::Bool 
-      person_id = sample(state.rng, individuals)
-      event = Event(Val(OutsideInfectionEvent), infection_time, person_id, strain)
-      push!(state.queue, event)
-    end
-  end
-
-end
-
-
 end #module

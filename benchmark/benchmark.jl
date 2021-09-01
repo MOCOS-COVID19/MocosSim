@@ -39,15 +39,6 @@ rng = Random.MersenneTwister(0);
     limit_value=0.545455
   ),
 
-  imported_cases_name = "ParabolicImports",
-  imported_cases_params=(
-    days = 30,
-    peak = 20,
-    height = 0.8,
-    minimum = 0.02
-  ),
-  travels_frequency = 0.05 |> MocosSim.TimePoint,
-
   forward_detection_delay=1.75,
   backward_detection_delay=1.75,
   testing_time=3.0
@@ -65,7 +56,7 @@ end
 
 @info "initializing state"
 @time MocosSim.reset!(state, MersenneTwister(0))
-@time MocosSim.initialfeed!(state, 100)
+@time MocosSim.InstantOusideCases(;num_infections=100)(state, params)
 
 @info "warm-up"
 cb = Callback(50, 0)

@@ -7,7 +7,7 @@ abstract type AbstractSimParams end
 
 abstract type InfectionModulation end
 
-abstract type ImportedCases end
+abstract type AbstractOutsideCases end
 
 include("params/age_coupling.jl")
 include("params/households.jl")
@@ -18,6 +18,7 @@ include("params/hospital.jl")
 include("params/phonetracing.jl")
 include("params/spreading.jl")
 include("params/strains.jl")
+include("params/outside_cases.jl")
 
 struct SimParams <: AbstractSimParams
   household_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}  # (i1,i2) where i1 and i2 are the indices of first and last member of the household
@@ -47,13 +48,10 @@ struct SimParams <: AbstractSimParams
   phone_tracing_params::Union{Nothing, PhoneTracingParams}
 
   infection_modulation_function::Union{Nothing,InfectionModulation}
-  imported_cases_function::Union{Nothing,ImportedCases}
-  travels_frequency::TimePoint
 
   spreading_params::Union{Nothing, SpreadingParams}
 end
 
-include("params/travels.jl")
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
 straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)
@@ -78,9 +76,6 @@ function load_params(rng=MersenneTwister(0);
         population::DataFrame,
         infection_modulation_name::Union{Nothing,AbstractString}=nothing,
         infection_modulation_params::NamedTuple=NamedTuple{}(),
-        imported_cases_name::Union{Nothing,AbstractString}=nothing,
-        imported_cases_params::NamedTuple=NamedTuple{}(),
-        travels_frequency::TimePoint = TimePoint(0.0),
         kwargs...
         )
 
@@ -106,15 +101,12 @@ function load_params(rng=MersenneTwister(0);
   )
 
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
-  imported_cases_function = isnothing(imported_cases_name) ? nothing : make_imported_cases(imported_cases_name; imported_cases_params...)
   
   make_params(
     rng,
     individuals_df=individuals_df,
     progressions=progressions,
-    infection_modulation_function=infection_modulation_function,
-    imported_cases_function=imported_cases_function,
-    travels_frequency = travels_frequency;
+    infection_modulation_function=infection_modulation_function;
     kwargs...
   )
 end
@@ -125,8 +117,6 @@ function make_params(
   progressions::AbstractArray{Progression},
 
   infection_modulation_function=nothing,
-  imported_cases_function=nothing,
-  travels_frequency::TimePoint=0.0,
 
   hospital_kernel_param::Float64=0.0,
   healthcare_detection_prob::Float64=0.8,
@@ -236,8 +226,6 @@ function make_params(
 
     phone_tracing_params,
     infection_modulation_function,
-    imported_cases_function,
-    travels_frequency,
     spreading_params
   )
   params
@@ -252,7 +240,6 @@ function saveparams(dict, p::SimParams)
   dict["detections/mild"] = p.mild_detection_prob
 
   dict["infection_modulation"] = p.infection_modulation_function
-  dict["imported_cases"] = p.imported_cases_function
 
   dict["tracing/backward_prob"] = p.backward_tracing_prob
   dict["tracing/backward_detection_delay"] = p.backward_detection_delay
