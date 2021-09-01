@@ -3,7 +3,7 @@ include("../src/event.jl")
 
 @testset "InfectionModulations" begin
   state = MocosSim.SimState(3)
-  params = Missing
+  params = missing
   strain::StrainKind = NullStrain
   contact_kind::ContactKind = ConstantKernelContact
   event = Event(Val(TransmissionEvent), 0.0, 0, 0, contact_kind, strain)
