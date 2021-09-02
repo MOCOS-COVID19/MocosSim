@@ -110,7 +110,7 @@ function load_params(rng=MersenneTwister(0);
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
   
   make_params(
-    rng,
+    rng;
     individuals_df=individuals_df,
     progressions=progressions,
     infection_modulation_function=infection_modulation_function,
