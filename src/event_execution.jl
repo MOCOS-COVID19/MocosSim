@@ -38,6 +38,7 @@ end
 #
 # transmissions
 #
+
 function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimParams, event::Event)::Bool
   if Healthy != subjecthealth(state, event) || Free != subjectfreedom(state, event)
     return false

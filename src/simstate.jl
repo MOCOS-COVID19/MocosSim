@@ -129,18 +129,6 @@ function initialfeed!(state::SimState, num_initial_infections::Integer, strain::
 
 end
 
-function outsidefeed!(state::SimState, num_initial_infections::Integer, strain::StrainKind=ChineseStrain, infection_time::Real=0.0)
-  N = length(state.individuals)
-  individuals = 1:N
-
-  for _ in 1:num_initial_infections
-    person_id = sample(state.rng, individuals)
-
-    event = Event(Val(OutsideInfectionEvent), infection_time, person_id, strain)
-    push!(state.queue, event)
-  end
-
-end
 
 
 saveparams(dict, state::SimState, prefix::AbstractString="") = saveparams(dict, state.forest, prefix)
