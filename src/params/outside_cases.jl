@@ -4,7 +4,7 @@ Base.@kwdef struct ParabolicOutsideCases <: AbstractOutsideCases
   height::Float64 = 0.8
   minimum::Float64 = 0.02
   frequency::TimePoint = 0.05 |> MocosSim.TimePoint
-  strain::StrainKind = ChineseStrain
+  strain::StrainKind = DeltaStrain
   time_limit::TimePoint = typemax(TimePoint)
 end
   
