@@ -114,7 +114,7 @@ function load_params(rng=MersenneTwister(0);
     individuals_df=individuals_df,
     progressions=progressions,
     infection_modulation_function=infection_modulation_function,
-    screening_params=screening_params;
+    screening_params=screening_params,
     kwargs...
   )
 end
