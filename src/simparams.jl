@@ -9,6 +9,10 @@ abstract type InfectionModulation end
 
 abstract type AbstractOutsideCases end
 
+abstract type InfectionModulation end
+
+abstract type ScreeningParam end
+
 include("params/age_coupling.jl")
 include("params/households.jl")
 include("params/friendship.jl")
@@ -21,8 +25,6 @@ include("params/spreading.jl")
 include("params/strains.jl")
 include("params/outside_cases.jl")
 
-abstract type InfectionModulation end
-abstract type ScreeningParam end
 
 struct SimParams <: AbstractSimParams
   household_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}  # (i1,i2) where i1 and i2 are the indices of first and last member of the household
