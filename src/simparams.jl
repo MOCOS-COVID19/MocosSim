@@ -20,7 +20,6 @@ include("params/modulations.jl")
 include("params/progression.jl")
 include("params/hospital.jl")
 include("params/phonetracing.jl")
-include("params/screening.jl")
 include("params/spreading.jl")
 include("params/strains.jl")
 include("params/outside_cases.jl")
@@ -57,6 +56,8 @@ struct SimParams <: AbstractSimParams
   screening_params::Union{Nothing, ScreeningParam}
   spreading_params::Union{Nothing, SpreadingParams}
 end
+
+include("params/screening.jl")
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
 straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)
