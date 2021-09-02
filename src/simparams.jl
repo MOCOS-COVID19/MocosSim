@@ -19,6 +19,7 @@ include("params/phonetracing.jl")
 include("params/spreading.jl")
 include("params/strains.jl")
 include("params/outside_cases.jl")
+include("params/screening.jl")
 
 struct SimParams <: AbstractSimParams
   household_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}  # (i1,i2) where i1 and i2 are the indices of first and last member of the household
@@ -48,11 +49,11 @@ struct SimParams <: AbstractSimParams
   phone_tracing_params::Union{Nothing, PhoneTracingParams}
 
   infection_modulation_function::Union{Nothing,InfectionModulation}
-  screening_params::Union{Nothing, ScreeningParam}
+  screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
 end
 
-include("params/screening.jl")
+
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
 straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)

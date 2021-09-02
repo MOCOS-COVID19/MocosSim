@@ -1,4 +1,4 @@
-Base.@kwdef struct ScreeningParams <: ScreeningParam
+Base.@kwdef struct ScreeningParams
   start_time::Float64 = 0.0
   precision::Float64 = 0.8
   period::Float64 = 7.0
@@ -6,7 +6,7 @@ Base.@kwdef struct ScreeningParams <: ScreeningParam
   upper_bound_age::Int64 = 16
 end
 
-function screening!(state::SimState, params::SimParams, event::Event)
+function screening!(state::AbstractSimState, params::AbstractSimParams, event::Event)
   if params.screening_params != nothing
     for id in 1:numindividuals(state)
       health = MocosSim.health(state, id)
@@ -34,7 +34,7 @@ function screening!(state::SimState, params::SimParams, event::Event)
   end
 end
 
-function add_screening!(state::SimState, params::SimParams,time_limit::TimePoint=typemax(TimePoint))
+function add_screening!(state::AbstractSimState, params::AbstractSimParams,time_limit::TimePoint=typemax(TimePoint))
   for screening_time in 0.0:params.screening_params.period:time_limit
     event = Event(Val(ScreenigEvent), screening_time)
     push!(state.queue, event)
