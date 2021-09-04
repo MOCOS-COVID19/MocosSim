@@ -1,6 +1,7 @@
 using CodecZlib
 using DataFrames
 using FileIO
+using FixedPointNumbers
 using JLD2
 using MocosSim
 using Test
@@ -9,10 +10,10 @@ using Random
 import MocosSim: time, numdead, numdetected
 
 tests = [
-#  "age_coupling",
-#  "matrix_alias_sampler",
-#  "population_grouping",
-  "modulations"
+  "age_coupling",
+  "matrix_alias_sampler",
+  "population_grouping",
+  "infection_modulations",
 ]
 
 if length(ARGS) > 0
