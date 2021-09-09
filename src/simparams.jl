@@ -78,7 +78,6 @@ function load_params(rng=MersenneTwister(0);
         population::DataFrame,
         infection_modulation_name::Union{Nothing,AbstractString}=nothing,
         infection_modulation_params::NamedTuple=NamedTuple{}(),
-        screening_params::Union{Nothing,ScreeningParams}=nothing,
         kwargs...
         )
 
@@ -106,11 +105,10 @@ function load_params(rng=MersenneTwister(0);
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
   
   make_params(
-    rng,
+    rng;
     individuals_df=individuals_df,
     progressions=progressions,
     infection_modulation_function=infection_modulation_function,
-    screening_params=screening_params;
     kwargs...
   )
 end

@@ -28,15 +28,15 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
           Val(DetectionEvent),
           time(event),
           id,
-          OutsideQuarantineDetction),
+          OutsideQuarantineDetection),
           immediate=true)
     end
   end
 end
 
-function add_screening!(state::AbstractSimState, params::AbstractSimParams,time_limit::TimePoint=typemax(TimePoint))
-  for screening_time in 0.0:params.screening_params.period:time_limit
-    event = Event(Val(ScreenigEvent), screening_time)
+function add_screening!(state::AbstractSimState, params::AbstractSimParams, time_limit::TimePoint=typemax(TimePoint))
+  for screening_time in params.screening_params.start_time:params.screening_params.period:time_limit
+    event = Event(Val(ScreeningEvent), screening_time)
     push!(state.queue, event)
   end
 end

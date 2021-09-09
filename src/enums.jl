@@ -8,7 +8,7 @@
 
 @enum ContactKind::UInt8 NoContact=0 HouseholdContact HospitalContact AgeCouplingContact ConstantKernelContact OutsideContact # 3 bits
 
-@enum DetectionKind::UInt8 NoDetection=0 OutsideQuarantineDetction=1 FromQuarantineDetection FromTracingDetection
+@enum DetectionKind::UInt8 NoDetection=0 OutsideQuarantineDetection=1 FromQuarantineDetection FromTracingDetection
 
 @enum TracingKind::UInt8 begin
   NotTraced=0
