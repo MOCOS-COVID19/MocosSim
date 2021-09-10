@@ -93,7 +93,7 @@ function load_params(rng=MersenneTwister(0);
   dist_death_time = LogNormal(2.610727719719777, 0.44476420066780653)
 
   progressions = Vector{Progression}(undef, num_individuals);
-  resample!(rng, progressions, individuals_df.age,
+  resample!(rng, progressions, individuals_df.age, individuals_df.gender,
     dist_incubation_time,
     dist_symptom_onset_time,
     dist_hospitalization_time,
