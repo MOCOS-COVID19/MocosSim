@@ -1,7 +1,7 @@
 name = "MocosSim"
 uuid = "af72bc66-7bc2-4ee8-90df-e21de508fcd7"
 authors = ["Tomasz Ożański <tomasz.ozanski@pwr.edu.pl>"]
-version = "0.4.0"
+version = "0.4.1"
 
 [deps]
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
