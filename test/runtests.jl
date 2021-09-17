@@ -1,8 +1,3 @@
-using CodecZlib
-using DataFrames
-using FileIO
-using FixedPointNumbers
-using JLD2
 using MocosSim
 using Test
 using Random
