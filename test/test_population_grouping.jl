@@ -28,5 +28,13 @@
         @test person_id in group
       end
     end
+
+    @testset "Group sizes" begin
+      sizes = MocosSim.groupsizes(grouping)
+      @test length(sizes) == num_groups
+      for i in 1:MocosSim.numgroups(grouping)
+        @test length(MocosSim.getgroup(grouping, i)) == sizes[i]
+      end
+    end
   end
 end
