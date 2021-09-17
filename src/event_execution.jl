@@ -30,11 +30,16 @@ function execute!(kind::EventKind, state::SimState, params::SimParams, event::Ev
   elseif TracedEvent==kind;                     return execute!(Val(TracedEvent), state, params, event)
   elseif QuarantinedEvent==kind;                return execute!(Val(QuarantinedEvent), state, params, event)
   elseif QuarantineEndEvent==kind;              return execute!(Val(QuarantineEndEvent), state, params, event)
+  elseif ScreeningEvent==kind;                   return execute!(Val(ScreeningEvent), state, params, event)
   else error("unsupported event kind $kind")
   end
   return true
 end
 
+function execute!(::Val{ScreeningEvent}, state::SimState, params::SimParams, event::Event)::Bool
+  screening!(state, params, event)
+  return true
+end
 #
 # transmissions
 #
@@ -136,9 +141,9 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
 
   if ishealthcare(params, subject_id) && rand(state.rng) < params.hospital_kernel_params.healthcare_detection_prob
     delay = rand(state.rng, Exponential(params.hospital_kernel_params.healthcare_detection_delay))
-    push!(state.queue, Event(Val(DetectionEvent), time(event)+delay, subject_id, OutsideQuarantineDetction))
+    push!(state.queue, Event(Val(DetectionEvent), time(event)+delay, subject_id, OutsideQuarantineDetection))
   elseif(rand(state.rng) < params.mild_detection_prob)
-    push!(state.queue, Event(Val(DetectionEvent), time(event)+2, subject_id, OutsideQuarantineDetction))
+    push!(state.queue, Event(Val(DetectionEvent), time(event)+2, subject_id, OutsideQuarantineDetection))
   end
   return true
 end
@@ -258,7 +263,7 @@ function execute!(::Val{GoHospitalEvent}, state::SimState, params::SimParams, ev
   if is_from_quarantine
     push!(state.queue, Event(Val(DetectionEvent), time(event), subject_id, FromQuarantineDetection), immediate=true) # immediately
   else
-    push!(state.queue, Event(Val(DetectionEvent), time(event), subject_id, OutsideQuarantineDetction), immediate=true) # immediately
+    push!(state.queue, Event(Val(DetectionEvent), time(event), subject_id, OutsideQuarantineDetection), immediate=true) # immediately
   end
   return true
 end
@@ -389,7 +394,7 @@ function detectioncheck!(state::SimState, params::SimParams, person_id::Integer)
     if isquarantined(state, person_id)
       push!(state.queue, Event(Val(DetectionEvent), now, person_id, FromQuarantineDetection), immediate=true) # immediately
     else
-      push!(state.queue, Event(Val(DetectionEvent), now, person_id, OutsideQuarantineDetction), immediate=true) # immediately
+      push!(state.queue, Event(Val(DetectionEvent), now, person_id, OutsideQuarantineDetection), immediate=true) # immediately
     end
   end
 end

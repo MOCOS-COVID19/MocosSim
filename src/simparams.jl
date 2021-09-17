@@ -19,6 +19,7 @@ include("params/phonetracing.jl")
 include("params/spreading.jl")
 include("params/strains.jl")
 include("params/outside_cases.jl")
+include("params/screening.jl")
 
 struct SimParams <: AbstractSimParams
   household_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}  # (i1,i2) where i1 and i2 are the indices of first and last member of the household
@@ -48,9 +49,10 @@ struct SimParams <: AbstractSimParams
   phone_tracing_params::Union{Nothing, PhoneTracingParams}
 
   infection_modulation_function::Union{Nothing,InfectionModulation}
-
+  screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
 end
+
 
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
@@ -103,10 +105,10 @@ function load_params(rng=MersenneTwister(0);
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
   
   make_params(
-    rng,
+    rng;
     individuals_df=individuals_df,
     progressions=progressions,
-    infection_modulation_function=infection_modulation_function;
+    infection_modulation_function=infection_modulation_function,
     kwargs...
   )
 end
@@ -117,6 +119,8 @@ function make_params(
   progressions::AbstractArray{Progression},
 
   infection_modulation_function=nothing,
+
+  screening_params::Union{Nothing,ScreeningParams}=nothing,
 
   hospital_kernel_param::Float64=0.0,
   healthcare_detection_prob::Float64=0.8,
@@ -226,6 +230,7 @@ function make_params(
 
     phone_tracing_params,
     infection_modulation_function,
+    screening_params,
     spreading_params
   )
   params
