@@ -8,6 +8,7 @@ tests = [
   "age_coupling",
   "matrix_alias_sampler",
   "population_grouping",
+  "infection_modulations",
 ]
 
 if length(ARGS) > 0
