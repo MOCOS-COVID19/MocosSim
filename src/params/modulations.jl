@@ -1,10 +1,13 @@
-Base.@kwdef struct TanhModulation <: InfectionModulation
-  weight_detected::Float64 = 0
-  weight_deaths::Float64 = 0
-  weight_days::Float64 = 0
+struct TanhModulation <: InfectionModulation
+  weight_detected::Float64
+  weight_deaths::Float64
+  weight_days::Float64
   loc::Float64
   scale::Float64
   limit_value::Float64
+
+  TanhModulation(;weight_detected::Real=0, weight_deaths::Real=0, weight_days::Real=0, loc::Real=0, scale::Real=0, limit_value::Real=0) =
+    0 <= limit_value <= 1 ? new(weight_detected, weight_deaths, weight_days, loc, scale, limit_value) : error("limit_value must be from 0 to 1, got $limit_value")
 end
 
 function tanh_modulation(x::Real, loc::Real, scale::Real, lhs_limit::Real, rhs_limit::Real)
@@ -30,13 +33,16 @@ function (f::TanhModulation)(state::AbstractSimState, ::AbstractSimParams, event
   rand(state.rng) < t
 end
 
-Base.@kwdef struct IncreasingTanhModulation <: InfectionModulation
-  weight_detected::Float64 = 0
-  weight_deaths::Float64 = 0
-  weight_days::Float64 = 0
+struct IncreasingTanhModulation <: InfectionModulation
+  weight_detected::Float64
+  weight_deaths::Float64
+  weight_days::Float64
   loc::Float64
   scale::Float64
   initial_value::Float64
+
+  IncreasingTanhModulation(;weight_detected::Real=0, weight_deaths::Real=0, weight_days::Real=0, loc::Real=0, scale::Real=0, initial_value::Real=0) =
+    0 <= initial_value <= 1 ? new(weight_detected, weight_deaths, weight_days, loc, scale, initial_value) : error("initial_value must be from 0 to 1, got $initial_value")
 end
 
 function (f::IncreasingTanhModulation)(state::AbstractSimState, ::AbstractSimParams, event::Event)
