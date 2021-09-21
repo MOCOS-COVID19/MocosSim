@@ -91,6 +91,7 @@ function load_params(rng=MersenneTwister(0);
   dist_mild_recovery_time = Uniform(11, 17)
   dist_severe_recovery_time = Uniform(4*7, 8*7)
   dist_death_time = LogNormal(1.6968381137317683, 1.2051253249941534)
+  severity_dists_ages = make_severity_dists_ages(hospitalization_men_probs, hospitalization_women_probs)
 
   progressions = Vector{Progression}(undef, num_individuals);
   resample!(rng, progressions, individuals_df.age, individuals_df.gender,
@@ -99,7 +100,8 @@ function load_params(rng=MersenneTwister(0);
     dist_hospitalization_time,
     dist_mild_recovery_time,
     dist_severe_recovery_time,
-    dist_death_time
+    dist_death_time,
+    severity_dists_ages
   )
 
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
