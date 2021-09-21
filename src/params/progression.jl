@@ -31,45 +31,31 @@ const hospitalization_time_probs = [0.028939918213274615, 0.016986473733878578, 
 const critical_probs = [0.030927835051546393, 0.04161979752530934, 0.050980392156862744, 0.09044834307992203, 0.12330905306971904, 0.17335058214747737]
 const death_probs_age = [0.6666666666666666, 0.5945945945945946, 0.7538461538461538, 0.7801724137931034, 0.8481012658227848, 0.9402985074626866]
 const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_probs)
+const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
 function sample_severity(rng::AbstractRNG, age::Real, gender::Bool)
-  dist = severity_dists[1]
-  if age < 0;       error("age should be non-negative")
-  elseif age < 40;  dist = severity_dists[1]
-  elseif age < 50;  dist = severity_dists[2]
-  elseif age < 60;  dist = severity_dists[3]
-  elseif age < 70;  dist = severity_dists[4]
-  elseif age < 80;  dist = severity_dists[5]
-  else;             dist = severity_dists[6]
+  if age < 0
+    error("age should be non-negative")
   end
+  group_ids = agegroup(age_hospitalization_thresholds, age)
+  dist = severity_dists[group_ids]
   idx = gender + 1 |> Int32
   prob = hospitalization_probs[idx][age < max_age_hosp ? age + 1 : max_age_hosp]
-  if age < 0;       error("age should be non-negative")
-  elseif age < 40;  dist = Categorical([0,  1.0 - prob,  prob *(1-critical_probs[1]) ,  prob *critical_probs[1]])
-  elseif age < 50;  dist = Categorical([0,  1.0 - prob,  prob *(1-critical_probs[2]) ,  prob *critical_probs[2]])
-  elseif age < 60;  dist = Categorical([0,  1.0 - prob,  prob *(1-critical_probs[3]) ,  prob *critical_probs[3]])
-  elseif age < 70;  dist = Categorical([0,  1.0 - prob,  prob *(1-critical_probs[4]) ,  prob *critical_probs[4]])
-  elseif age < 80;  dist = Categorical([0,  1.0 - prob,  prob *(1-critical_probs[5]) ,  prob *critical_probs[5]])
-  else;             dist = Categorical([0,  1.0 - prob,  prob *(1-critical_probs[6]) ,  prob *critical_probs[6]])
-  end
+  dist = Categorical([0,  1.0 - prob,  prob *(1-critical_probs[group_ids]) ,  prob *critical_probs[group_ids]])
   severity_int = rand(rng, dist)
   severity = rand(rng, dist) |> Severity
 end
 
 function sample_if_death(rng::AbstractRNG, severity::Severity, age::Real)
+  if age < 0
+    error("age should be non-negative")
+  end
   severity_int = severity |> UInt8
-  death_prob = death_probs[severity_int]
   if severity != Critical
     return false
-  elseif age < 0;       error("age should be non-negative")
-  elseif age < 40;  death_prob = death_probs_age[1]
-  elseif age < 50;  death_prob = death_probs_age[2]
-  elseif age < 60;  death_prob = death_probs_age[3]
-  elseif age < 70;  death_prob = death_probs_age[4]
-  elseif age < 80;  death_prob = death_probs_age[5]
-  else;             death_prob = death_probs_age[6]
   end
-
+  death_prob = death_probs[severity_int]
+  death_prob = death_probs_age[agegroup(age_hospitalization_thresholds, age)]
   rand(rng) < death_prob
 end
 
