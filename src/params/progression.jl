@@ -127,7 +127,7 @@ end
 function resample!(
   rng::AbstractRNG,
   progressions, ages::AbstractVector{T} where T <: Real,
-  genders::AbstractArray{T} where T <: Bool,
+  genders::AbstractVector{Bool},
   dist_incubation_time,
   dist_symptom_onset_time,
   dist_hospitalization_time,
