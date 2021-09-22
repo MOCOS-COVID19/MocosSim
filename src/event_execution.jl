@@ -161,7 +161,7 @@ function execute!(::Val{MildSymptomsEvent}, state::SimState, params::SimParams, 
 
   if Severe == progression.severity || Critical == progression.severity
     @assert !ismissing(progression.severe_symptoms_time)
-    @assert infection_time + progression.severe_symptoms_time >= time(event) "$(infection_time + progression.severe_symptoms_time) !>= $(time(event))"
+    @assert infection_time + progression.severe_symptoms_time >= time(event) "$(infection_time + progression.severe_symptoms_time) !>= $(time(event))" * " where severe symptoms is $(progression.severe_symptoms_time) and infection time is $(infection_time) and symptoms time is $(progression.mild_symptoms_time) and event time is $(time(event)) and severity is $(progression.severity)"
     push!(state.queue, Event(Val(SevereSymptomsEvent), infection_time + progression.severe_symptoms_time, subject_id))
   else
     @assert infection_time + progression.recovery_time > time(event) "next event time $(infection_time + progression.recovery_time) is than current event $event"

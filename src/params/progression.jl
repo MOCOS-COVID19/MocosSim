@@ -4,7 +4,7 @@ struct Progression
     incubation_time::TimeDiff
     mild_symptoms_time::Union{Missing,TimeDiff}
     severe_symptoms_time::Union{Missing,TimeDiff}
-    #critical_symptoms_time::Float32
+    critical_symptoms_time::Union{Missing,TimeDiff}
     recovery_time::Union{Missing,TimeDiff}
     death_time::Union{Missing, TimeDiff}
     #Progression(severity::Severity, incubation_time::Real, mild_time::Real, severe_time::Real, recovery_time) = incubation < mild_time < severe_time < recovery_time
@@ -106,6 +106,7 @@ end
     mild_symptoms_time = incubation_time + rand(rng, dist_symptom_onset)
   end
   severe_symptoms_time = missing
+  critical_symptoms_time = missing
   recovery_time = missing
   death_time = missing
   if (severity==Severe) || (severity==Critical)
@@ -113,16 +114,17 @@ end
     if severe_symptoms_time <= mild_symptoms_time
       mild_symptoms_time = missing
     end
+    if (severity==Critical)
+      critical_symptoms_time = severe_symptoms_time
+    end
     recovery_time = severe_symptoms_time + asample(hospitalization_time_sampler, rng)
   else
     if (severity==Mild)
       recovery_time = mild_symptoms_time + rand(rng, dist_mild_recovery)
-    else
-      if vaccinated  # && (severity==Asymptomatic)
-        recovery_time = incubation_time  # TODO if we want this # rand(rng, dist_mild_recovery)
-      else # now only asymptomatic, but not vaccinated
-        recovery_time = rand(rng, dist_mild_recovery)
-      end
+    elseif vaccinated  # && (severity==Asymptomatic)
+      recovery_time = incubation_time
+    else # now only asymptomatic, but not vaccinated
+      recovery_time = rand(rng, dist_mild_recovery)
     end
   end
 
@@ -130,6 +132,11 @@ end
     death_time = incubation_time + rand(rng, dist_death_time)
     if death_time < severe_symptoms_time
       severe_symptoms_time = death_time
+      if isequal(mild_symptoms_time, missing)
+        mild_symptoms_time = missing
+      elseif severe_symptoms_time <= mild_symptoms_time
+        mild_symptoms_time = missing
+      end
     end
     recovery_time = missing
   end
@@ -139,6 +146,7 @@ end
     incubation_time |> TimeDiff,
     ismissing(mild_symptoms_time) ? missing : TimeDiff(mild_symptoms_time),
     ismissing(severe_symptoms_time) ? missing : TimeDiff(severe_symptoms_time),
+    ismissing(critical_symptoms_time) ? missing : TimeDiff(critical_symptoms_time),
     ismissing(recovery_time) ? missing : TimeDiff(recovery_time),
     ismissing(death_time) ? missing : TimeDiff(death_time)
   )
@@ -177,6 +185,7 @@ function saveparams(dict, progressions::AbstractVector{Progression}, prefix::Abs
     dict[prefix*"incubation_times"] = storagefloat.(progressions, :incubation_time)
     dict[prefix*"mild_symptoms_times"] = storagefloat.(progressions, :mild_symptoms_time)
     dict[prefix*"severe_symptoms_times"] = storagefloat.(progressions, :severe_symptoms_time)
+    dict[prefix*"critical_symptoms_times"] = storagefloat.(progressions, :critical_symptoms_time)
     dict[prefix*"recovery_times"] = storagefloat.(progressions, :recovery_time)
     dict[prefix*"death_times"] = storagefloat.(progressions, :death_time)
 end
