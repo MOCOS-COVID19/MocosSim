@@ -85,11 +85,11 @@ function load_params(rng=MersenneTwister(0);
 
   num_individuals = individuals_df |> nrow
 
-  dist_incubation_time = LogNormal(1.3669786931887833, 0.5045104580676582)
-  dist_symptom_onset_time = Gamma(0.8738003969079596, 2.9148873266517685)
-  dist_hospitalization_time = Gamma(1.1765988120148885, 2.6664347368236787)
-  dist_mild_recovery_time = Uniform(11, 17)
-  dist_severe_recovery_time = Uniform(4*7, 8*7)
+  dist_incubation_time = LogNormal(1.3669786931887833, 0.5045104580676582) # accurate
+  dist_symptom_onset_time = Gamma(0.8738003969079596, 2.9148873266517685) # not have data
+  dist_hospitalization_time = Exponential(3.78) # Gamma(1.1765988120148885, 2.6664347368236787)
+  dist_mild_recovery_time = Uniform(11, 17) #not sure if we need to change it
+  dist_severe_recovery_time = Uniform(4*7, 8*7) # not used
   dist_death_time = LogNormal(1.6968381137317683, 1.2051253249941534)
   severity_dists_ages = make_severity_dists_ages(hospitalization_men_probs, hospitalization_women_probs)
 
