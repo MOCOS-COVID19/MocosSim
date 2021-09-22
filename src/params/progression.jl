@@ -33,7 +33,14 @@ const death_probs_age = [0.6666666666666666, 0.5945945945945946, 0.7538461538461
 const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_probs)
 const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
-function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages)
+const age_vaccination_thresholds = Int[0, 12, 18, 25, 50, 60, 70, 80]
+const vaccination_uptakes_probs_age = [0.0, 0.104, 0.456, 0.522, 0.631, 0.709, 0.885, 0.698]
+const vaccination_severe_effectiveness = 0.85
+const vaccination_critical_effectiveness = 0.85
+const vaccination_mild_effectiveness = 0.6
+#[0, 0.6, 0.85, 0.85] # Asymptomatic=1 Mild Severe Critical
+const vaccination_death_effectiveness = 0.85
+function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages, vaccinated::Bool)
   if age < 0
     error("age should be non-negative")
   end
@@ -45,6 +52,19 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dis
   dist = severity_dists_ages[idx][age < max_age_hosp ? age + 1 : max_age_hosp]
   severity_int = rand(rng, dist)
   severity = rand(rng, dist) |> Severity
+
+  if (severity==Critical) && vaccinated && rand(rng) < vaccination_critical_effectiveness
+    severity = Severe
+  end
+
+  if (severity==Severe) && vaccinated && rand(rng) < vaccination_severe_effectiveness
+    severity = Mild
+  end
+
+  if (severity==Mild) && vaccinated && rand(rng) < vaccination_mild_effectiveness
+    severity = Asymptomatic
+  end
+  severity
 end
 
 function sample_if_death(rng::AbstractRNG, severity::Severity, age::Real)
@@ -70,7 +90,10 @@ end
     severity_dists_ages
   )
 
-  severity = sample_severity(rng, age, gender, severity_dists_ages)
+  vaccine_prob = vaccination_uptakes_probs_age[agegroup(age_vaccination_thresholds, age)]
+  vaccinated = rand(rng) < vaccine_prob
+
+  severity = sample_severity(rng, age, gender, severity_dists_ages, vaccinated)
 
   mild_symptoms_time = missing
   severe_symptoms_time = missing
@@ -79,8 +102,9 @@ end
 
   incubation_time = rand(rng, dist_incubation)
 
-  mild_symptoms_time = incubation_time + rand(rng, dist_symptom_onset)
-
+  if (severity==Mild) || (severity==Severe) || (severity==Critical)
+    mild_symptoms_time = incubation_time + rand(rng, dist_symptom_onset)
+  end
   severe_symptoms_time = missing
   recovery_time = missing
   death_time = missing
@@ -91,13 +115,21 @@ end
     end
     recovery_time = severe_symptoms_time + asample(hospitalization_time_sampler, rng)
   else
-    recovery_time = mild_symptoms_time + rand(rng, dist_mild_recovery)
+    if (severity==Mild)
+      recovery_time = mild_symptoms_time + rand(rng, dist_mild_recovery)
+    else
+      if vaccinated  # && (severity==Asymptomatic)
+        recovery_time = incubation_time  # TODO if we want this # rand(rng, dist_mild_recovery)
+      else # now only asymptomatic, but not vaccinated
+        recovery_time = rand(rng, dist_mild_recovery)
+      end
+    end
   end
 
-  if sample_if_death(rng, severity, age)
+  if sample_if_death(rng, severity, age) # vaccine effect was already considered, no need to modify here
     death_time = incubation_time + rand(rng, dist_death_time)
     if death_time < severe_symptoms_time
-      death_time = severe_symptoms_time
+      severe_symptoms_time = death_time
     end
     recovery_time = missing
   end
