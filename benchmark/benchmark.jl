@@ -64,7 +64,6 @@ cb = Callback(50, 0)
 @time MocosSim.simulate!(state, params, cb)
 @info "events executed = $(cb.num_events), simtime=$(state.time)"
 
-
 @info "measuring allocations"
 cb = Callback(100, 0)
 Profile.clear_malloc_data()
