@@ -9,6 +9,7 @@ tests = [
   "matrix_alias_sampler",
   "population_grouping",
   "infection_modulations",
+  "household_grouping",
 ]
 
 if length(ARGS) > 0

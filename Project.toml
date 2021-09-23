@@ -1,7 +1,7 @@
 name = "MocosSim"
 uuid = "af72bc66-7bc2-4ee8-90df-e21de508fcd7"
 authors = ["Tomasz Ożański <tomasz.ozanski@pwr.edu.pl>"]
-version = "0.3.6"
+version = "0.3.7"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"

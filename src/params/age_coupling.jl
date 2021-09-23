@@ -11,8 +11,8 @@ function AgeCouplingParams(
   ages::AbstractVector{T} where T<:Real,
   genders::Union{Nothing, AbstractVector{Bool}},
   age_thresholds::AbstractVector{T} where T<:Real,
-  coupling_weights::Matrix{Float64};
-  normalize_contacts::Bool=true)
+  coupling_weights::Matrix{Float64},
+  contact_normalization::Union{Nothing, Real})
 
   @assert age_thresholds[1] == 0
   num_groups = length(age_thresholds)
@@ -31,10 +31,10 @@ function AgeCouplingParams(
 
   coupling_sampler = CouplingSampler(group_ids, coupling_weights, PersonIdx)
 
-  if normalize_contacts # normalize such that expected number of contacts is equal to 1
+  if nothing !== contact_normalization # normalize such that expected number of contacts is equal to the given value
     group_sizes = groupsizes(coupling_sampler.grouping)
     mean_contacts = source_weighting' * group_sizes / sum(group_sizes)
-    source_weighting ./= mean_contacts
+    source_weighting .*= contact_normalization / mean_contacts
   end
 
   AgeCouplingParams(
