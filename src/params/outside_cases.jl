@@ -29,7 +29,7 @@ Base.@kwdef struct InstantOutsideCases <: AbstractOutsideCases
   strain::StrainKind = ChineseStrain
 end
   
-function (f::InstantOusideCases)(state::AbstractSimState, ::AbstractSimParams)
+function (f::InstantOutsideCases)(state::AbstractSimState, ::AbstractSimParams)
   N = length(state.individuals)
   individuals = 1:N
 
