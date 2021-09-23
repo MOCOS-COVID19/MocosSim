@@ -1,4 +1,3 @@
-
 function make_household_ptrs!(
     ptrs::AbstractVector{Tuple{Ti,Ti}},
     household_indices::AbstractVector{T} where T<:Integer
@@ -14,5 +13,5 @@ function make_household_ptrs!(
     ptrs
   end
 
-  make_household_ptrs(household_indices::AbstractVector{T} where T<:Real) =
-    make_household_ptrs!(Vector{Tuple{PersonIdx, PersonIdx}}(undef, length(household_indices)), household_indices)
+make_household_ptrs(household_indices::AbstractVector{T} where T<:Real) =
+  make_household_ptrs!(Vector{Tuple{PersonIdx, PersonIdx}}(undef, length(household_indices)), household_indices)

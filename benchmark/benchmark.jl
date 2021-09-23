@@ -29,6 +29,7 @@ rng = Random.MersenneTwister(0);
                         2.1 2.2 2.3;
                         3.1 3.2 3.3],
   age_coupling_use_genders=false,
+  age_coupling_param=1.0,
 
   infection_modulation_name="TanhModulation",
   infection_modulation_params=(
@@ -56,7 +57,7 @@ end
 
 @info "initializing state"
 @time MocosSim.reset!(state, MersenneTwister(0))
-@time MocosSim.InstantOusideCases(;num_infections=100)(state, params)
+@time MocosSim.initialfeed!(state, 100)
 
 @info "warm-up"
 cb = Callback(50, 0)

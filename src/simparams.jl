@@ -31,6 +31,8 @@ struct SimParams <: AbstractSimParams
 
   strain_table::StrainTable
 
+  constant_kernel_param::Float32
+  household_kernel_param::Float32
   age_coupling_params::Union{Nothing, AgeCouplingParams} # nothing if kernel not active
   hospital_kernel_params::Union{Nothing, HospitalInfectionParams}  # nothing if hospital kernel not active
 
@@ -52,8 +54,6 @@ struct SimParams <: AbstractSimParams
   screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
 end
-
-
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
 straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)
@@ -103,7 +103,7 @@ function load_params(rng=MersenneTwister(0);
   )
 
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
-  
+
   make_params(
     rng;
     individuals_df=individuals_df,
@@ -155,6 +155,7 @@ function make_params(
   age_coupling_thresholds::Union{Nothing, AbstractArray{T} where T<:Real}=nothing,
   age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
   age_coupling_use_genders::Bool=false,
+  age_coupling_param::Union{Nothing, Real}=nothing,
 )
   sort!(individuals_df, :household_index)
 
@@ -164,45 +165,50 @@ function make_params(
 
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
-  strain_table = make_strains(constant_kernel_param, household_kernel_param, british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier)
+  strain_table = make_strains(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier)
 
-  age_coupling_kernel_params =  if nothing === age_coupling_weights && nothing === age_coupling_thresholds; nothing
-                        elseif age_coupling_weights !== nothing && age_coupling_thresholds !== nothing
-                          @assert minimum(individuals_df.age) >= 0
-                          @assert maximum(individuals_df.age) * (age_coupling_use_genders+1) < typemax(GroupIdx)
-                          AgeCouplingParams(
-                            individuals_df.age,
-                            age_coupling_use_genders === nothing ? individuals_df.gender : nothing,
-                            age_coupling_thresholds, age_coupling_weights,
-                            )
-                        else error("age couplig params not fully given")
-                        end
+  age_coupling_kernel_params =
+    if nothing === age_coupling_weights && nothing === age_coupling_thresholds && nothing === age_coupling_param; nothing
+    elseif age_coupling_weights !== nothing && age_coupling_thresholds !== nothing
+      @assert minimum(individuals_df.age) >= 0
+      @assert maximum(individuals_df.age) * (age_coupling_use_genders+1) < typemax(GroupIdx)
+      AgeCouplingParams(
+        individuals_df.age,
+        age_coupling_use_genders === nothing ? individuals_df.gender : nothing,
+        age_coupling_thresholds, age_coupling_weights,
+        age_coupling_param
+        )
+    else error("age couplig params not fully given")
+    end
 
-  hospital_kernel_params =  if 0 == hospital_kernel_param; nothing
-                            elseif 0.0 < hospital_kernel_param;
-                              HospitalInfectionParams(
-                                individuals_df.ishealthcare,
-                                (UInt32(1):UInt32(num_individuals))[individuals_df.ishealthcare],
-                                hospital_kernel_param,
-                                healthcare_detection_prob,
-                                healthcare_detection_delay
-                              )
-                            else error("hospital_kernel_param must be postive or 0, got $hospital_kernel_param")
-                            end
+  hospital_kernel_params =
+    if 0 == hospital_kernel_param; nothing
+    elseif 0.0 < hospital_kernel_param;
+      HospitalInfectionParams(
+        individuals_df.ishealthcare,
+        (UInt32(1):UInt32(num_individuals))[individuals_df.ishealthcare],
+        hospital_kernel_param,
+        healthcare_detection_prob,
+        healthcare_detection_delay
+      )
+    else error("hospital_kernel_param must be postive or 0, got $hospital_kernel_param")
+    end
 
-  phone_tracing_params = if 0 == phone_tracing_usage; nothing
-                      elseif 0.0 < phone_tracing_usage <= 1.0
-                        phone_tracing_usage_by_household ?
-                          PhoneTracingParams(rng, num_individuals, phone_tracing_usage, phone_detection_delay, 1, household_ptrs) :
-                          PhoneTracingParams(rng, num_individuals, phone_tracing_usage, phone_detection_delay, 1)
-                      else error("tracing_app_usage must be nonnegative, got $phone_tracing_usage")
-                      end
+  phone_tracing_params =
+    if 0 == phone_tracing_usage; nothing
+    elseif 0.0 < phone_tracing_usage <= 1.0
+      phone_tracing_usage_by_household ?
+        PhoneTracingParams(rng, num_individuals, phone_tracing_usage, phone_detection_delay, 1, household_ptrs) :
+        PhoneTracingParams(rng, num_individuals, phone_tracing_usage, phone_detection_delay, 1)
+    else error("tracing_app_usage must be nonnegative, got $phone_tracing_usage")
+    end
 
-  spreading_params = if nothing === spreading_alpha; nothing
-                  elseif 0.0 < spreading_alpha
-                    SpreadingParams(rng, num_individuals, alpha=spreading_alpha, x0=spreading_x0, truncation=spreading_truncation)
-                  else error("spreading_alpha must be larger than 0, got $spreading_alpha")
-                  end
+  spreading_params =
+    if nothing === spreading_alpha; nothing
+    elseif 0.0 < spreading_alpha
+      SpreadingParams(rng, num_individuals, alpha=spreading_alpha, x0=spreading_x0, truncation=spreading_truncation)
+    else error("spreading_alpha must be larger than 0, got $spreading_alpha")
+    end
 
   params = SimParams(
     household_ptrs,
@@ -213,6 +219,8 @@ function make_params(
 
     strain_table,
 
+    constant_kernel_param,
+    household_kernel_param,
     age_coupling_kernel_params,
     hospital_kernel_params,
 
