@@ -57,7 +57,7 @@ end
 
 @info "initializing state"
 @time MocosSim.reset!(state, MersenneTwister(0))
-@time MocosSim.InstantOusideCases(;num_infections=100)(state, params)
+@time MocosSim.InstantOutsideCases(;num_infections=100)(state, params)
 
 @info "warm-up"
 cb = Callback(50, 0)
