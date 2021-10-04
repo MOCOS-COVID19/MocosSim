@@ -37,8 +37,8 @@ const vaccination_uptakes_probs_age_Poland = [0.0, 0.104, 0.456, 0.522, 0.631, 0
 const age_vaccination_thresholds_Lower_Silesia = Int[0, 12, 20, 40, 60, 70]
 const vaccination_uptakes_probs_age_Lower_Silesia = [0.0, 0.3367, 0.4851, 0.5987, 0.6998, 0.8246]
 
-const age_vaccination_thresholds = age_vaccination_thresholds_Poland
-const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Poland
+const age_vaccination_thresholds = age_vaccination_thresholds_Lower_Silesia  # age_vaccination_thresholds_Poland
+const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Lower_Silesia  # vaccination_uptakes_probs_age_Poland
 const vaccination_severe_effectiveness = 0.85
 const vaccination_critical_effectiveness = 0.85
 const vaccination_mild_effectiveness = 0.6
