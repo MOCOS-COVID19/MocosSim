@@ -23,13 +23,13 @@ function (f::ParabolicOutsideCases)(state::AbstractSimState, ::AbstractSimParams
 
 end
 
-Base.@kwdef struct InstantOusideCases <: AbstractOutsideCases
+Base.@kwdef struct InstantOutsideCases <: AbstractOutsideCases
   num_infections::Float64 = 50
   import_time::TimePoint = 0.0 |> MocosSim.TimePoint
   strain::StrainKind = ChineseStrain
 end
   
-function (f::InstantOusideCases)(state::AbstractSimState, ::AbstractSimParams)
+function (f::InstantOutsideCases)(state::AbstractSimState, ::AbstractSimParams)
   N = length(state.individuals)
   individuals = 1:N
 
@@ -43,7 +43,7 @@ end
 # This all to avoid using @eval and others
 const imported_cases = Dict{String, Type{T} where T}(
     "ParabolicOutsideCases" => ParabolicOutsideCases,
-    "InstantOusideCases"   => InstantOusideCases
+    "InstantOutsideCases"   => InstantOutsideCases
 )
 
 make_imported_cases(name::AbstractString; args...) = imported_cases[name](;args...)

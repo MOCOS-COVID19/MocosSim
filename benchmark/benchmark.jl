@@ -57,13 +57,12 @@ end
 
 @info "initializing state"
 @time MocosSim.reset!(state, MersenneTwister(0))
-@time MocosSim.initialfeed!(state, 100)
+@time MocosSim.InstantOutsideCases(;num_infections=100)(state, params)
 
 @info "warm-up"
 cb = Callback(50, 0)
 @time MocosSim.simulate!(state, params, cb)
 @info "events executed = $(cb.num_events), simtime=$(state.time)"
-
 
 @info "measuring allocations"
 cb = Callback(100, 0)
