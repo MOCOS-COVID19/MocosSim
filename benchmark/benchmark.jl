@@ -60,7 +60,7 @@ function run()
 
   @info "initializing state"
   @time MocosSim.reset!(state, MersenneTwister(0))
-  @time MocosSim.initialfeed!(state, 100)
+  @time MocosSim.InstantOutsideCases(;num_infections=100)(state, params)
 
   @info "warm-up"
   cb = Callback(50, 0)
@@ -73,8 +73,7 @@ function run()
   @time MocosSim.simulate!(state, params, cb)
 end
 
-
-
 end
 
 MocosSimBenchmark.run()
+
