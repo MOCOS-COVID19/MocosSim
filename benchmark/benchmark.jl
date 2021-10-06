@@ -19,8 +19,6 @@ function (cb::Callback)(event::MocosSim.Event, ::MocosSim.SimState, ::MocosSim.S
   MocosSim.time(event) < cb.max_time
 end
 
-precompile(simulate!, (MocosSim.SimState, MocosSim.SimParams, Callback))
-
 function run()
   individuals_df = load( (@__DIR__) * "/wroclaw_v4.jld2", "individuals_df")
 
@@ -72,6 +70,9 @@ function run()
   Profile.clear_malloc_data()
   @time MocosSim.simulate!(state, params, cb)
 end
+
+precompile(MocosSim.simulate!, (MocosSim.SimState, MocosSim.SimParams, Callback))
+precompile(run, ())
 
 end
 
