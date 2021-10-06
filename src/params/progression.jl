@@ -32,13 +32,13 @@ const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_prob
 const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
 const age_vaccination_thresholds_Poland = Int[0, 12, 18, 25, 50, 60, 70, 80]
-const vaccination_uptakes_probs_age_Poland = [0.0, 0.104, 0.456, 0.522, 0.631, 0.709, 0.885, 0.698]
+const vaccination_uptakes_probs_age_Poland = [0.0, 0.123, 0.483, 0.54, 0.648, 0.728, 0.885, 0.698]
 
 const age_vaccination_thresholds_Lower_Silesia = Int[0, 12, 20, 40, 60, 70]
 const vaccination_uptakes_probs_age_Lower_Silesia = [0.0, 0.3367, 0.4851, 0.5987, 0.6998, 0.8246]
 
-const age_vaccination_thresholds = age_vaccination_thresholds_Lower_Silesia  # age_vaccination_thresholds_Poland
-const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Lower_Silesia  # vaccination_uptakes_probs_age_Poland
+const age_vaccination_thresholds = age_vaccination_thresholds_Poland
+const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Poland
 const vaccination_severe_effectiveness = 0.85
 const vaccination_critical_effectiveness = 0.85
 const vaccination_mild_effectiveness = 0.6
@@ -167,8 +167,8 @@ function resample!(
   dist_death_time,
   severity_dists_ages)
 
-  for i in 1:length(ages)
-    progressions[i] = sample_progression(rng, ages[i], genders[i],
+  for i in 1:length(ages) # ages is +1 as we have older population now
+    progressions[i] = sample_progression(rng, ages[i] + 1, genders[i],
       dist_incubation_time,
       dist_symptom_onset_time,
       dist_hospitalization_time,
