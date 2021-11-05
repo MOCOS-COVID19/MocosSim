@@ -16,21 +16,12 @@ function tanh_modulation(x::Real, loc::Real, scale::Real, lhs_limit::Real, rhs_l
   t_01 * (rhs_limit-lhs_limit) + lhs_limit
 end
 
-function (f::TanhModulation)(state::AbstractSimState, ::AbstractSimParams, event::Event)
-  @assert kind(event) == TransmissionEvent
-
-  ck = contactkind(event)
-  if ConstantKernelContact !== ck && AgeCouplingContact !== ck
-    return true # do not affect other types of contact than "outer" ones
-  end
-
+function evalmodulation(f::TanhModulation, state::AbstractSimState, ::AbstractSimParams)::Float64
   num_days = time(state)
   num_detected = numdetected(state)
   num_deaths = numdead(state)
-
   fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths + num_days * f.weight_days
-  t = tanh_modulation(fear, f.loc, f.scale, 1.0, f.limit_value)
-  rand(state.rng) < t
+  tanh_modulation(fear, f.loc, f.scale, 1.0, f.limit_value)
 end
 
 struct IncreasingTanhModulation <: InfectionModulation
@@ -45,7 +36,18 @@ struct IncreasingTanhModulation <: InfectionModulation
     0 <= initial_value <= 1 ? new(weight_detected, weight_deaths, weight_days, loc, scale, initial_value) : error("initial_value must be from 0 to 1, got $initial_value")
 end
 
-function (f::IncreasingTanhModulation)(state::AbstractSimState, ::AbstractSimParams, event::Event)
+function evalmodulation(f::IncreasingTanhModulation, state::AbstractSimState, ::AbstractSimParams)::Float64
+  num_days = time(state)
+  num_detected = numdetected(state)
+  num_deaths = numdead(state)
+
+  fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths + num_days * f.weight_days
+  tanh_modulation(fear, f.loc, f.scale, f.initial_value, 1.0)
+end
+
+evalmodulation(modulation::Nothing, state::AbstractSimState, params::AbstractSimParams)::Float64 = 1.0
+
+function infectionsuccess(modulation::InfectionModulation, state::AbstractSimState, params::AbstractSimParams, event::Event)::Bool
   @assert kind(event) == TransmissionEvent
 
   ck = contactkind(event)
@@ -53,13 +55,23 @@ function (f::IncreasingTanhModulation)(state::AbstractSimState, ::AbstractSimPar
     return true # do not affect other types of contact than "outer" ones
   end
 
-  num_days = time(state)
-  num_detected = numdetected(state)
-  num_deaths = numdead(state)
+  rand(state.rng) < evalmodulation(modulation, state, params)
+end
 
-  fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths + num_days * f.weight_days
-  t = tanh_modulation(fear, f.loc, f.scale, f.initial_value, 1.0)
-  rand(state.rng) < t
+function infectionsuccess(state::AbstractSimState, params::AbstractSimParams, event::Event)::Bool
+  if isnothing(params.infection_modulation)
+    return true
+  end
+
+  @assert kind(event) == TransmissionEvent
+
+  ck = contactkind(event)
+  if ConstantKernelContact !== ck && AgeCouplingContact !== ck
+    return true # do not affect other types of contact than "outer" ones
+  end
+
+  rand(state.rng) < evalmodulation(params.infection_modulation, state, params)
+#  infectionsuccess(params.infection_modulation, state, params, event)
 end
 
 # This all to avoid using @eval and others
