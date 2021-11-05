@@ -74,6 +74,14 @@ uses_phone_tracing(params::SimParams, person_id::Integer) =
 
 spreading(params::SimParams, person_id::Integer) = isnothing(params.spreading_params) ? 1.0 : spreading(params.spreading_params, person_id)
 
+milddetectionprob(params::SimParams) = params.mild_detection_prob
+forwardtracingprob(params::SimParams) = params.forward_tracing_prob
+backwardtracingprob(params::SimParams) = params.backward_tracing_prob
+
+forwarddetectiondelaydist(params::SimParams) = Exponential(params.forward_detection_delay)
+backwarddetectiondelaydist(params::SimParams) = Exponential(params.backward_detection_delay)
+
+
 function load_params(rng=MersenneTwister(0);
         population::DataFrame,
         infection_modulation_name::Union{Nothing,AbstractString}=nothing,
