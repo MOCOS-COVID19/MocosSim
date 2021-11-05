@@ -85,7 +85,7 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
 
   @assert contactkind(event) == HospitalContact || (contactkind(event) == HouseholdContact) || (!isquarantined(state, source(event)) && !isquarantined(state, subject(event))) "the event $event should not be executed because subject state is $(state.individuals[subject(event)]) and source state is $(state.individuals[source(event)])"
 
-  if params.infection_modulation_function !== nothing && !params.infection_modulation_function(state, params, event)::Bool
+  if !infectionsuccess(state, params, event)
     return false
   end
 
@@ -142,7 +142,7 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
   if ishealthcare(params, subject_id) && rand(state.rng) < params.hospital_kernel_params.healthcare_detection_prob
     delay = rand(state.rng, Exponential(params.hospital_kernel_params.healthcare_detection_delay))
     push!(state.queue, Event(Val(DetectionEvent), time(event)+delay, subject_id, OutsideQuarantineDetection))
-  elseif rand(state.rng) < milddetectionprob(params)
+  elseif rand(state.rng) < milddetectionprob(state, params)
     push!(state.queue, Event(Val(DetectionEvent), time(event)+2, subject_id, OutsideQuarantineDetection))
   end
   return true
@@ -450,7 +450,7 @@ function backtrace!(state::SimState, params::SimParams, person_id::Integer; trac
       rand(state.rng) < params.phone_tracing_params.detection_prob
       detection_delay = rand(state.rng, Exponential(params.phone_tracing_params.detection_delay))
     push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, backward_id, person_id, PhoneTraced))
-  elseif rand(state.rng) < backwardtracingprob(params)
+  elseif rand(state.rng) < backwardtracingprob(state, params)
     detection_delay = rand(state.rng, backwarddetectiondelaydist(params))
     push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, backward_id, person_id, ClassicalTraced))
   end
@@ -494,7 +494,7 @@ function forwardtrace!(state::SimState, params::SimParams, person_id::Integer; t
         rand(state.rng) < params.phone_tracing_params.detection_prob
         detection_delay = rand(state.rng, Exponential(params.phone_tracing_params.detection_delay))
       push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, forward_id, person_id, PhoneTraced))
-    elseif rand(state.rng) < forwardtracingprob(params)
+    elseif rand(state.rng) < forwardtracingprob(state, params)
       detection_delay = rand(state.rng, forwarddetectiondelaydist(params))
       push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, forward_id, person_id, ClassicalTraced))
     end

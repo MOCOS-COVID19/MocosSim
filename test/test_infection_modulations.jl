@@ -1,4 +1,4 @@
-using MocosSim: tanh_modulation
+using MocosSim: tanh_modulation, infectionsuccess
 
 @testset "InfectionModulations" begin
   @testset "ReferenceFunction" begin
@@ -52,9 +52,9 @@ using MocosSim: tanh_modulation
     household_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.HouseholdContact, strain)
     constant_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.ConstantKernelContact, strain)
 
-    @test modulation(mock_state, TanhMockParams(), household_infection) == true
+    @test infectionsuccess(modulation, mock_state, TanhMockParams(), household_infection) == true
 
-    hits += modulation(mock_state, TanhMockParams(), constant_infection)
+    hits += infectionsuccess(modulation, mock_state, TanhMockParams(), constant_infection)
   end
 
   @test hits == num_samples/2
@@ -79,9 +79,9 @@ end
     household_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.HouseholdContact, strain)
     constant_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.ConstantKernelContact, strain)
 
-    @test modulation(mock_state, TanhMockParams(), household_infection) == true
+    @test infectionsuccess(modulation, mock_state, TanhMockParams(), household_infection) == true
 
-    hits += modulation(mock_state, TanhMockParams(), constant_infection)
+    hits += infectionsuccess( modulation, mock_state, TanhMockParams(), constant_infection)
   end
 
   @test hits == num_samples/2

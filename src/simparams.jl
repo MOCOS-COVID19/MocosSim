@@ -50,7 +50,11 @@ struct SimParams <: AbstractSimParams
 
   phone_tracing_params::Union{Nothing, PhoneTracingParams}
 
-  infection_modulation_function::Union{Nothing,InfectionModulation}
+  infection_modulation::Union{Nothing, InfectionModulation}
+  mild_case_detection_modulation::Union{Nothing, InfectionModulation}
+  forward_tracing_modulation::Union{Nothing, InfectionModulation}
+  backward_tracing_modulation::Union{Nothing, InfectionModulation}
+
   screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
 end
@@ -74,9 +78,9 @@ uses_phone_tracing(params::SimParams, person_id::Integer) =
 
 spreading(params::SimParams, person_id::Integer) = isnothing(params.spreading_params) ? 1.0 : spreading(params.spreading_params, person_id)
 
-milddetectionprob(params::SimParams) = params.mild_detection_prob
-forwardtracingprob(params::SimParams) = params.forward_tracing_prob
-backwardtracingprob(params::SimParams) = params.backward_tracing_prob
+milddetectionprob(s::SimState, p::SimParams) = p.mild_detection_prob * evalmodulation(p.mild_case_detection_modulation, s, p)
+forwardtracingprob(s::SimState, p::SimParams) = p.forward_tracing_prob * evalmodulation(p.forward_tracing_modulation, s, p)
+backwardtracingprob(s::SimState, p::SimParams) = p.backward_tracing_prob * evalmodulation(p.backward_tracing_modulation, s, p)
 
 forwarddetectiondelaydist(params::SimParams) = Exponential(params.forward_detection_delay)
 backwarddetectiondelaydist(params::SimParams) = Exponential(params.backward_detection_delay)
@@ -110,13 +114,13 @@ function load_params(rng=MersenneTwister(0);
     dist_death_time
   )
 
-  infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
+  infection_modulation = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
 
   make_params(
     rng;
     individuals_df=individuals_df,
     progressions=progressions,
-    infection_modulation_function=infection_modulation_function,
+    infection_modulation=infection_modulation,
     kwargs...
   )
 end
@@ -126,7 +130,10 @@ function make_params(
   individuals_df::DataFrame,
   progressions::AbstractArray{Progression},
 
-  infection_modulation_function=nothing,
+  infection_modulation=nothing,
+  mild_case_detection_modulation=nothing,
+  forward_tracing_modulation=nothing,
+  backward_tracing_modulation=nothing,
 
   screening_params::Union{Nothing,ScreeningParams}=nothing,
 
@@ -245,7 +252,12 @@ function make_params(
     testing_time, # testing time
 
     phone_tracing_params,
-    infection_modulation_function,
+
+    infection_modulation,
+    mild_case_detection_modulation,
+    forward_tracing_modulation,
+    backward_tracing_modulation,
+
     screening_params,
     spreading_params
   )
@@ -260,7 +272,7 @@ function saveparams(dict, p::SimParams)
   dict["detections/hospital"] = p.hospital_detections
   dict["detections/mild"] = p.mild_detection_prob
 
-  dict["infection_modulation"] = p.infection_modulation_function
+  dict["infection_modulation"] = p.infection_modulation
 
   dict["tracing/backward_prob"] = p.backward_tracing_prob
   dict["tracing/backward_detection_delay"] = p.backward_detection_delay
