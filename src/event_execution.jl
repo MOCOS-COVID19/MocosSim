@@ -142,7 +142,7 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
   if ishealthcare(params, subject_id) && rand(state.rng) < params.hospital_kernel_params.healthcare_detection_prob
     delay = rand(state.rng, Exponential(params.hospital_kernel_params.healthcare_detection_delay))
     push!(state.queue, Event(Val(DetectionEvent), time(event)+delay, subject_id, OutsideQuarantineDetection))
-  elseif(rand(state.rng) < params.mild_detection_prob)
+  elseif rand(state.rng) < milddetectionprob(params)
     push!(state.queue, Event(Val(DetectionEvent), time(event)+2, subject_id, OutsideQuarantineDetection))
   end
   return true
@@ -450,8 +450,8 @@ function backtrace!(state::SimState, params::SimParams, person_id::Integer; trac
       rand(state.rng) < params.phone_tracing_params.detection_prob
       detection_delay = rand(state.rng, Exponential(params.phone_tracing_params.detection_delay))
     push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, backward_id, person_id, PhoneTraced))
-  elseif rand(state.rng) < params.backward_tracing_prob
-    detection_delay = rand(state.rng, Exponential(params.backward_detection_delay))
+  elseif rand(state.rng) < backwardtracingprob(params)
+    detection_delay = rand(state.rng, backwarddetectiondelaydist(params))
     push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, backward_id, person_id, ClassicalTraced))
   end
   nothing
@@ -494,8 +494,8 @@ function forwardtrace!(state::SimState, params::SimParams, person_id::Integer; t
         rand(state.rng) < params.phone_tracing_params.detection_prob
         detection_delay = rand(state.rng, Exponential(params.phone_tracing_params.detection_delay))
       push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, forward_id, person_id, PhoneTraced))
-    elseif rand(state.rng) < params.forward_tracing_prob
-      detection_delay = rand(state.rng, Exponential(params.forward_detection_delay))
+    elseif rand(state.rng) < forwardtracingprob(params)
+      detection_delay = rand(state.rng, forwarddetectiondelaydist(params))
       push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, forward_id, person_id, ClassicalTraced))
     end
 
