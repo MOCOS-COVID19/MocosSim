@@ -24,11 +24,12 @@ using MocosSim: tanh_modulation, infectionsuccess
     end
   end
 
-  struct TanhMockState <: MocosSim.AbstractSimState
+  mutable struct TanhMockState <: MocosSim.AbstractSimState
     rng::MersenneTwister
+    time::Float64
   end
 
-  MocosSim.time(::TanhMockState) = 10
+  MocosSim.time(s::TanhMockState) = s.time
   MocosSim.numdetected(::TanhMockState) = 0
   MocosSim.numdead(::TanhMockState) = 0
 
@@ -43,11 +44,17 @@ using MocosSim: tanh_modulation, infectionsuccess
       scale=1.0,
       limit_value=0.0)
 
-  mock_state = TanhMockState(MersenneTwister(13))
+  for t in -3:0.1:3
+    mock_state = TanhMockState(MersenneTwister(13), t)
+    @test MocosSim.evalmodulation(modulation, mock_state, TanhMockParams()) == tanh_modulation(t, 10, 1, 1.0, 0.0)
+  end
+
   strain = MocosSim.ChineseStrain
 
   hits = 0
   num_samples = 100
+
+  mock_state = TanhMockState(MersenneTwister(13), 10.0)
   for i in 1:num_samples
     household_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.HouseholdContact, strain)
     constant_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.ConstantKernelContact, strain)
@@ -70,7 +77,12 @@ end
       scale=1.0,
       initial_value=0.0)
 
-  mock_state = TanhMockState(MersenneTwister(13))
+  for t in -3:0.1:3
+    mock_state = TanhMockState(MersenneTwister(13), t)
+    @test MocosSim.evalmodulation(modulation, mock_state, TanhMockParams()) == tanh_modulation(t, 10, 1, 0.0, 1.0)
+  end
+
+  mock_state = TanhMockState(MersenneTwister(13), 10.0)
   strain = MocosSim.ChineseStrain
 
   hits = 0
