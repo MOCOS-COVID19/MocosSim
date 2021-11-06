@@ -143,7 +143,8 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
     delay = rand(state.rng, Exponential(params.hospital_kernel_params.healthcare_detection_delay))
     push!(state.queue, Event(Val(DetectionEvent), time(event)+delay, subject_id, OutsideQuarantineDetection))
   elseif rand(state.rng) < milddetectionprob(state, params)
-    push!(state.queue, Event(Val(DetectionEvent), time(event)+2, subject_id, OutsideQuarantineDetection))
+    delay = rand(state.rng, milddetectiondelaydist(params))
+    push!(state.queue, Event(Val(DetectionEvent), time(event)+delay, subject_id, OutsideQuarantineDetection))
   end
   return true
 end
