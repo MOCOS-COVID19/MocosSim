@@ -38,6 +38,7 @@ struct SimParams <: AbstractSimParams
 
   hospital_detections::Bool
   mild_detection_prob::Float64
+  mild_detection_delay::Float64
 
   backward_tracing_prob::Float32
   backward_detection_delay::TimeDiff
@@ -51,7 +52,7 @@ struct SimParams <: AbstractSimParams
   phone_tracing_params::Union{Nothing, PhoneTracingParams}
 
   infection_modulation::Union{Nothing, InfectionModulation}
-  mild_case_detection_modulation::Union{Nothing, InfectionModulation}
+  mild_detection_modulation::Union{Nothing, InfectionModulation}
   forward_tracing_modulation::Union{Nothing, InfectionModulation}
   backward_tracing_modulation::Union{Nothing, InfectionModulation}
 
@@ -78,10 +79,11 @@ uses_phone_tracing(params::SimParams, person_id::Integer) =
 
 spreading(params::SimParams, person_id::Integer) = isnothing(params.spreading_params) ? 1.0 : spreading(params.spreading_params, person_id)
 
-milddetectionprob(s::SimState, p::SimParams) = p.mild_detection_prob * evalmodulation(p.mild_case_detection_modulation, s, p)
+milddetectionprob(s::SimState, p::SimParams) = p.mild_detection_prob * evalmodulation(p.mild_detection_modulation, s, p)
 forwardtracingprob(s::SimState, p::SimParams) = p.forward_tracing_prob * evalmodulation(p.forward_tracing_modulation, s, p)
 backwardtracingprob(s::SimState, p::SimParams) = p.backward_tracing_prob * evalmodulation(p.backward_tracing_modulation, s, p)
 
+milddetectiondelaydist(p::SimParams) = Uniform(p.mild_detection_delay, nextfloat(p.mild_detection_delay))
 forwarddetectiondelaydist(params::SimParams) = Exponential(params.forward_detection_delay)
 backwarddetectiondelaydist(params::SimParams) = Exponential(params.backward_detection_delay)
 
@@ -131,7 +133,7 @@ function make_params(
   progressions::AbstractArray{Progression},
 
   infection_modulation=nothing,
-  mild_case_detection_modulation=nothing,
+  mild_detection_modulation=nothing,
   forward_tracing_modulation=nothing,
   backward_tracing_modulation=nothing,
 
@@ -146,6 +148,7 @@ function make_params(
 
   hospital_detections::Bool=true,
   mild_detection_prob::Float64=0.0,
+  mild_detection_delay::Float64=2.0,
 
   backward_tracing_prob::Float64=0.0,
   backward_detection_delay::Float64=1.0,
@@ -241,6 +244,7 @@ function make_params(
 
     hospital_detections,
     mild_detection_prob,
+    mild_detection_delay,
 
     backward_tracing_prob,
     backward_detection_delay,
@@ -254,7 +258,7 @@ function make_params(
     phone_tracing_params,
 
     infection_modulation,
-    mild_case_detection_modulation,
+    mild_detection_modulation,
     forward_tracing_modulation,
     backward_tracing_modulation,
 
