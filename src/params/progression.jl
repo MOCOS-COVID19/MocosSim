@@ -38,13 +38,15 @@ const vaccination_uptakes_probs_age_Poland = [0.0, 0.123, 0.483, 0.54, 0.648, 0.
 const age_vaccination_thresholds_Lower_Silesia = Int[0, 12, 20, 40, 60, 70]
 const vaccination_uptakes_probs_age_Lower_Silesia = [0.0, 0.3367, 0.4851, 0.5987, 0.6998, 0.8246]
 
-const age_vaccination_thresholds = age_vaccination_thresholds_Poland
-const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Poland
-const vaccination_severe_effectiveness = 0.85
-const vaccination_critical_effectiveness = 0.85
-const vaccination_mild_effectiveness = 0.6
+const age_vaccination_thresholds_Saxony = Int[0, 12, 18, 60]
+const vaccination_uptakes_probs_age_Saxony = [0.0, 0.267, 0.58, 0.789]
+
+const age_vaccination_thresholds = age_vaccination_thresholds_Saxony
+const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Saxony
+const vaccination_severe_effectiveness = 0.875
+const vaccination_critical_effectiveness = 0.92
+const vaccination_mild_effectiveness = 0.75
 #[0, 0.6, 0.85, 0.85] # Asymptomatic=1 Mild Severe Critical
-const vaccination_death_effectiveness = 0.85
 function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages, vaccinated::Bool)
   if age < 0
     error("age should be non-negative")
