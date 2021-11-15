@@ -1,16 +1,31 @@
-struct Progression
-    severity::Severity
-    # times given with respect to the infection time
-    incubation_time::TimeDiff
-    mild_symptoms_time::Union{Missing,TimeDiff}
-    severe_symptoms_time::Union{Missing,TimeDiff}
-    #critical_symptoms_time::Float32
-    recovery_time::Union{Missing,TimeDiff}
-    death_time::Union{Missing, TimeDiff}
-    #Progression(severity::Severity, incubation_time::Real, mild_time::Real, severe_time::Real, recovery_time) = incubation < mild_time < severe_time < recovery_time
+struct ProgressionParams
+  # the distribution are subject to change
+  dist_incubation_time::LogNormal{Float64}
+  dist_symptom_onset_time::Gamma{Float64}
+  dist_hospitalization_time::Gamma{Float64}
+  dist_mild_recovery_time::Uniform{Float64}
+  dist_severe_recovery_time::Uniform{Float64}
+  dist_death_time::LogNormal{Float64}
 end
 
-Progression() = Progression(Asymptomatic, missing, missing, missing, missing, missing)
+function make_progression_params()
+  #this data needs updating
+  dist_incubation_time = LogNormal(1.3669786931887833, 0.5045104580676582)
+  dist_symptom_onset_time = Gamma(0.8738003969079596, 2.9148873266517685)
+  dist_hospitalization_time = Gamma(1.1765988120148885, 2.6664347368236787)
+  dist_mild_recovery_time = Uniform(11, 17)
+  dist_severe_recovery_time = Uniform(4*7, 8*7)
+  dist_death_time = LogNormal(2.610727719719777, 0.44476420066780653)
+
+  ProgressionParams(
+    dist_incubation_time,
+    dist_symptom_onset_time,
+    dist_hospitalization_time,
+    dist_mild_recovery_time,
+    dist_severe_recovery_time,
+    dist_death_time
+  )
+end
 
 # Asymptotic not allowed as yet (some asserts prevent them)
 const severity_dists = [
@@ -34,8 +49,8 @@ function sample_severity(rng::AbstractRNG, age::Real)
   elseif age < 80;  dist = severity_dists[5]
   else;             dist = severity_dists[6]
   end
-  severity_int = rand(rng, dist)
-  severity = rand(rng, dist) |> Severity
+
+  rand(rng, dist) |> Severity
 end
 
 function sample_if_death(rng::AbstractRNG, severity::Severity)
@@ -43,6 +58,21 @@ function sample_if_death(rng::AbstractRNG, severity::Severity)
   death_prob = death_probs[severity_int]
   rand(rng) < death_prob
 end
+
+function sample_progression(rng::AbstractRNG, progression_data::ProgressionParams, age::Real, gender::Bool, immunity::ImmunityState, strain::StrainKind)
+  #TODO expecting updated progression generation soon
+  sample_progression(
+    rng,
+    age,
+    progression_data.dist_incubation_time,
+    progression_data.dist_symptom_onset_time,
+    progression_data.dist_hospitalization_time,
+    progression_data.dist_mild_recovery_time,
+    progression_data.dist_severe_recovery_time,
+    progression_data.dist_death_time
+  )
+end
+
 
 @inline function sample_progression(rng::AbstractRNG, age::Real,
     dist_incubation,

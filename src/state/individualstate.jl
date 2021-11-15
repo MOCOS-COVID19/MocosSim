@@ -1,15 +1,17 @@
-struct IndividualState #TODO change to immutable
+struct IndividualState
     health::HealthState
     freedom::FreedomState
     detected::DetectionStatus
-    quarantine_level::SafeUInt8
+    immunity::ImmunityState
+    quarantine_level::SafeUInt16
   end
 
   IndividualState() = IndividualState(
     Healthy,
     Free,
     Undetected,
+    NoImmunity,
     0
   )
 
-  show(io::IO, s::IndividualState) = print(io, "(",s.health, ", ", s.freedom, ", ", s.detected, ", ", s.quarantine_level, ")")
+  show(io::IO, s::IndividualState) = print(io, "(",s.health, ", ", s.freedom, ", ", s.detected, ", ", s.immunity, ", ", s.quarantine_level, ")")

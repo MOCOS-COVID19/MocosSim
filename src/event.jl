@@ -31,6 +31,8 @@
   RecoveryEvent
   DeathEvent
 
+  ImmunizationEvent
+
   ScreeningEvent
 
   InvalidEvent # should not be executed
@@ -42,8 +44,8 @@ struct Event
   subject_id::PersonIdx           # 4 bytes
   source_id::PersonIdx            # 4 bytes
   event_kind::EventKind           # 1 byte
-  extra::UInt8
-  strain::StrainKind
+  extra::UInt8                    # 1 byte
+  strain::StrainKind              # 1 byte
 
   #contact_kind::ContactKind       # 1 byte
   #extension::Bool                 # 1 byte
@@ -60,6 +62,7 @@ struct Event
   Event(::Val{TracedEvent}, time::Real, subject::Integer, source::Integer, tracing_kind::TracingKind) = new(time, subject, source, TracedEvent, UInt8(tracing_kind), NullStrain)
   Event(::Val{DetectionEvent}, ::Real, ::Integer) = error("detection kind must be given for detection event")
   Event(::Val{DetectionEvent}, time::Real, subject::Integer, detectionkind::DetectionKind) = new(time, subject, 0, DetectionEvent, UInt8(detectionkind), NullStrain)
+  Event(::Val{ImmunizationEvent}, time::Real, subject::Integer, new_immunity::ImmunityState) = new(time, subject, 0, ImmunizationEvent, UInt8(new_immunity), NullStrain)
   Event(::Val{ScreeningEvent}, time::Real) = new(time, 0, 0, ScreeningEvent, 0, NullStrain)
 end
 
@@ -74,6 +77,7 @@ extension(event::Event) = isquarantine(event) ? Bool(event.extra) : false
 tracingkind(event::Event) = istracing(event) ? TracingKind(event.extra) : NotTraced
 
 strainkind(event::Event) = istransmission(event) ? event.strain : NullStrain
+immunitykind(event::Event)::ImmunityState = isimmunization(event) ? ImmunityState(event.extra) : NullImmunity
 
 function show(io::IO, event::Event)
   print(io, time(event), ":", kind(event), " ", subject(event))
@@ -100,3 +104,5 @@ ishospitalization(ek::EventKind) = ek == GoHospitalEvent
 ishospitalization(e::Event) = ishospitalization(kind(e))
 isdeath(ek::EventKind) = ek == DeathEvent
 isdeath(e::Event) = isdeath(kind(e))
+isimmunization(ek::EventKind) = ek == ImmunizationEvent
+isimmunization(e::Event) = isimmunization(kind(e))

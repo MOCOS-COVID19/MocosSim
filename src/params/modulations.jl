@@ -80,4 +80,5 @@ const modulations = Dict{String, Type{T} where T}(
     "IncreasingTanhModulation" => IncreasingTanhModulation
 )
 
+make_infection_modulation(::Nothing) = nothing
 make_infection_modulation(name::AbstractString; args...) = modulations[name](;args...)
