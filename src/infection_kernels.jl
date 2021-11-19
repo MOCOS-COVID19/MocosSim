@@ -1,5 +1,5 @@
 function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, source_id::Integer, params::SimParams)
-  progression = progressionof(params, source_id)
+  progression = progressionof(state, source_id)
 
   start_time = progression.incubation_time
   end_time =  if      !ismissing(progression.mild_symptoms_time);   progression.mild_symptoms_time
@@ -11,7 +11,7 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
   strain = strainof(state, source_id)
 
   total_infection_rate = (end_time - start_time) * params.constant_kernel_param
-  total_infection_rate *= straindata(params, strain).outside_multiplier
+  total_infection_rate *= rawinfectivity(params, strain)
   total_infection_rate *= spreading(params, source_id)
 
   num_infections = rand(state.rng, Poisson(total_infection_rate))
@@ -31,7 +31,7 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
       subject_id +=1
     end
 
-    if Healthy == health(state, subject_id)
+    if Healthy == health(state, subject_id) && rand(state.rng) < condinfectivity(params, immunityof(state, subject_id), strain)
       infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
       @assert state.time <= infection_time <= (end_time-start_time + state.time)
       push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, ConstantKernelContact, strain))
@@ -47,7 +47,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
     return
   end
 
-  progression = progressionof(params, source_id)
+  progression = progressionof(state, source_id)
 
   start_time = progression.incubation_time
   end_time =  if      !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
@@ -58,12 +58,13 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
   max_time = time(state) - start_time + end_time
 
   strain = strainof(state, source_id)
+
   mean_infection_time = (length(household)-1) / params.household_kernel_param
-  mean_infection_time /= straindata(params, strain).household_multiplier
+  mean_infection_time /= rawinfectivity(params, strain)
   time_dist = Exponential(mean_infection_time)
 
   for subject_id in household
-    if subject_id == source_id || Healthy != health(state, subject_id)
+    if subject_id == source_id || Healthy != health(state, subject_id) || rand(state.rng) >= condinfectivity(params, immunityof(state, subject_id), strain)
       continue
     end
 
@@ -88,7 +89,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HospitalContact}, source_
   if nothing === params.hospital_kernel_params
     return
   end
-  progression = progressionof(params, source_id)
+  progression = progressionof(state, source_id)
 
   @assert progression.severity in SA[Severe, Critical]
   @assert !ismissing(progression.severe_symptoms_time)
@@ -100,7 +101,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HospitalContact}, source_
   strain = strainof(state, source_id)
 
   total_infection_rate = (end_time - start_time) * params.hospital_kernel_params.kernel_constant
-  total_infection_rate *= straindata(params, strain).outside_multiplier
+  total_infection_rate *= rawinfectivity(params, strain)
 
   num_infections = rand(state.rng, Poisson(total_infection_rate))
 
@@ -117,7 +118,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HospitalContact}, source_
       continue
     end
 
-    if Healthy == health(state, subject_id)
+    if Healthy == health(state, subject_id) && rand(state.rng) < condinfectivity(params, immunityof(state, subject_id), strain)
       infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
       @assert state.time <= infection_time <= (end_time-start_time + state.time)
       push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, HospitalContact))
@@ -130,7 +131,7 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
     return
   end
 
-  progression = progressionof(params, source_id)
+  progression = progressionof(state, source_id)
 
   start_time = progression.incubation_time
   end_time =  if      !ismissing(progression.mild_symptoms_time);   progression.mild_symptoms_time
@@ -141,7 +142,7 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
 
   strain = strainof(state, source_id)
 
-  total_infection_rate = (end_time - start_time) * straindata(params, strain).outside_multiplier
+  total_infection_rate = (end_time - start_time) * rawinfectivity(params, strain)
   total_infection_rate *= sourceweightof(params.age_coupling_params, source_id)
   total_infection_rate *= spreading(params, source_id)
 
@@ -161,7 +162,7 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
       break
     end
 
-    if Healthy == health(state, subject_id)
+    if Healthy == health(state, subject_id) && rand(state.rng) < condinfectivity(params, immunityof(state, subject_id), strain)
       infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
       @assert state.time <= infection_time <= (end_time-start_time + state.time)
       push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, AgeCouplingContact, strain))

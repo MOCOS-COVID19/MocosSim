@@ -40,40 +40,18 @@ include("infection_kernels.jl")
 export simulate!
 export Event
 
-function simulate!(state::SimState,
-                   params::SimParams;
-                   history::Union{Nothing, Vector{Event}}=nothing,
-                   execution_history::Union{Nothing, BitVector}=nothing,
-                   state_history::Union{Nothing, Vector{IndividualState}}=nothing)
-  iter_no = 0
+function simulate!(state::SimState, params::SimParams)
   while true
     if isempty(state.queue)
       break
     end
-
     event = pop!(state.queue)
-
-    if nothing !== history
-      push!(history, event)
-    end
-
-    result::Bool = execute!(state, params, event)
-
-    if nothing !== execution_history
-      push!(execution_history, result)
-    end
-
-    if nothing !== state_history
-      push!(state_history, state.individuals[subject(event)])
-    end
-
-    iter_no+=1
+    execute!(state, params, event)
   end
   nothing
 end
 
 function simulate!(state::SimState, params::SimParams, callback)
-  iter_no = 0
   while true
     if isempty(state.queue)
       break
@@ -89,8 +67,6 @@ function simulate!(state::SimState, params::SimParams, callback)
          break
        end
     end
-
-    iter_no+=1
   end
   nothing
 end

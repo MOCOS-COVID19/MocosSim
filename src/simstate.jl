@@ -1,4 +1,5 @@
 include("state/individualstate.jl")
+include("state/progression.jl")
 include("state/runningstats.jl")
 
 abstract type AbstractSimState end
@@ -9,6 +10,7 @@ mutable struct SimState <: AbstractSimState
   time::TimePoint
   queue::EventQueue
   individuals::Vector{IndividualState}
+  progressions::Vector{Progression}
   forest::InfectionForest
   stats::RunningStats
 
@@ -20,6 +22,7 @@ mutable struct SimState <: AbstractSimState
       EventQueue(),
 
       fill(IndividualState(), num_individuals),
+      fill(Progression(), num_individuals),
 
       InfectionForest(num_individuals),
 
@@ -39,6 +42,7 @@ function reset!(state::SimState, rng::AbstractRNG)
   empty!(state.queue)
   reset!(state.forest)
   fill!(state.individuals, IndividualState())
+  fill!(state.progressions, Progression())
   reset!(state.stats)
   state
 end
@@ -65,14 +69,17 @@ sourcehealth(state::SimState, event::Event)::HealthState = health(state, source(
 sourcefreedom(state::SimState, event::Event)::FreedomState = freedom(state, source(event))
 
 strainof(state::SimState, person_id::Integer) = strainof(state.forest, person_id)
+immunityof(state::SimState, person_id::Integer)::ImmunityState = state.individuals[person_id].immunity
+function progressionof(state::SimState, person_id::Integer)
+  progression = state.progressions[person_id]
+  @assert progression.severity !== UndefinedSeverity
+  progression
+end
 numdetected(state::SimState) = numdetected(state.stats)
 numdead(state::SimState) = numdead(state.stats)
 
-
-#forwardinfections(state::SimState, person_id::Integer) = inclusive(state.infections, searchequalrange(state.infections, person_id)...) |> values
 forwardinfections(state::SimState, person_id::Integer) = forwardinfections(state.forest, person_id)
 backwardinfection(state::SimState, person_id::Integer) = backwardinfection(state.forest, person_id)
-
 
 function sethealth!(state::SimState, person_id::Integer, new_health::HealthState)
   orig = state.individuals[person_id]
@@ -91,6 +98,17 @@ function setdetected!(state::SimState, person_id::Integer, new_detected::Detecti
   orig = state.individuals[person_id]
   @assert orig.detected <= new_detected
   state.individuals[person_id] = @set orig.detected = new_detected
+  nothing
+end
+
+function setimmunity!(state::SimState, person_id::Integer, new_immunity::ImmunityState)
+  orig = state.individuals[person_id]
+  state.individuals[person_id] = @set orig.immunity = new_immunity
+end
+
+function setprogression!(state::SimState, person_id::Integer, progression::Progression)
+  @assert state.progressions[person_id].severity == UndefinedSeverity
+  state.progressions[person_id] = progression
   nothing
 end
 
@@ -128,7 +146,5 @@ function initialfeed!(state::SimState, num_initial_infections::Integer, strain::
   end
 
 end
-
-
 
 saveparams(dict, state::SimState, prefix::AbstractString="") = saveparams(dict, state.forest, prefix)

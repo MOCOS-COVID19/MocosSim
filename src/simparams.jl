@@ -12,12 +12,12 @@ abstract type AbstractOutsideCases end
 include("params/age_coupling.jl")
 include("params/households.jl")
 include("params/friendship.jl")
+include("params/immunity.jl")
 include("params/modulations.jl")
 include("params/progression.jl")
 include("params/hospital.jl")
 include("params/phonetracing.jl")
 include("params/spreading.jl")
-include("params/strains.jl")
 include("params/outside_cases.jl")
 include("params/screening.jl")
 
@@ -27,9 +27,8 @@ struct SimParams <: AbstractSimParams
   ages::Vector{Age}
   genders::BitVector
 
-  progressions::Vector{Progression} # not sure if progressions should be there
-
-  strain_table::StrainTable
+  progression_params::ProgressionParams
+  strain_immunity_table::StrainImmunityTable
 
   constant_kernel_param::Float32
   household_kernel_param::Float32
@@ -61,10 +60,9 @@ struct SimParams <: AbstractSimParams
 end
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
-straindata(params::SimParams, strain::StrainKind) = getdata(params.strain_table, strain)
+rawinfectivity(params::SimParams, strain::StrainKind) = rawinfectivity(params.strain_immunity_table, strain)
+condinfectivity(params::SimParams, immunity::ImmunityState, strain::StrainKind) = condinfectivity(params.strain_immunity_table, immunity, strain)
 
-progressionof(params::SimParams, person_id::Integer) = params.progressions[person_id]
-severityof(params::SimParams, person_id::Integer) = progressionof(params, person_id).severity
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
 age(params::SimParams, person_id::Integer) = params.ages[person_id]
 gender(params::SimParams, person_id::Integer) = params.genders[person_id]
@@ -87,42 +85,41 @@ milddetectiondelaydist(p::SimParams) = Uniform(p.mild_detection_delay, nextfloat
 forwarddetectiondelaydist(params::SimParams) = Exponential(params.forward_detection_delay)
 backwarddetectiondelaydist(params::SimParams) = Exponential(params.backward_detection_delay)
 
-
 function load_params(rng=MersenneTwister(0);
         population::DataFrame,
-        infection_modulation_name::Union{Nothing,AbstractString}=nothing,
-        infection_modulation_params::NamedTuple=NamedTuple{}(),
+
+        infection_modulation_name::Union{Nothing,AbstractString} = nothing,
+        infection_modulation_params::NamedTuple = NamedTuple{}(),
+
+        mild_detection_modulation_name::Union{Nothing, AbstractString} = nothing,
+        mild_detection_modulation_params::NamedTuple = NamedTuple{}(),
+
+        forward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
+        forward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
+
+        backward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
+        backward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
+
         kwargs...
         )
 
   individuals_df::DataFrame = population
 
-  num_individuals = individuals_df |> nrow
+  progression_params::ProgressionParams = make_progression_params()
 
-  dist_incubation_time = LogNormal(1.3669786931887833, 0.5045104580676582)
-  dist_symptom_onset_time = Gamma(0.8738003969079596, 2.9148873266517685)
-  dist_hospitalization_time = Gamma(1.1765988120148885, 2.6664347368236787)
-  dist_mild_recovery_time = Uniform(11, 17)
-  dist_severe_recovery_time = Uniform(4*7, 8*7)
-  dist_death_time = LogNormal(2.610727719719777, 0.44476420066780653)
-
-  progressions = Vector{Progression}(undef, num_individuals);
-  resample!(rng, progressions, individuals_df.age,
-    dist_incubation_time,
-    dist_symptom_onset_time,
-    dist_hospitalization_time,
-    dist_mild_recovery_time,
-    dist_severe_recovery_time,
-    dist_death_time
-  )
-
-  infection_modulation = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
+  infection_modulation = make_infection_modulation(infection_modulation_name; infection_modulation_params...)
+  mild_detection_modulation = make_infection_modulation(mild_detection_modulation_name; mild_detection_modulation_params...)
+  forward_tracing_modulation = make_infection_modulation(forward_tracing_modulation_name; forward_tracing_modulation_params...)
+  backward_tracing_modulation = make_infection_modulation(backward_tracing_modulation_name; backward_tracing_modulation_params...)
 
   make_params(
     rng;
-    individuals_df=individuals_df,
-    progressions=progressions,
-    infection_modulation=infection_modulation,
+    individuals_df = individuals_df,
+    progression_params = progression_params,
+    infection_modulation = infection_modulation,
+    mild_detection_modulation = mild_detection_modulation,
+    forward_tracing_modulation = forward_tracing_modulation,
+    backward_tracing_modulation = backward_tracing_modulation,
     kwargs...
   )
 end
@@ -130,7 +127,7 @@ end
 function make_params(
   rng::AbstractRNG=MersenneTwister(0);
   individuals_df::DataFrame,
-  progressions::AbstractArray{Progression},
+  progression_params::ProgressionParams,
 
   infection_modulation=nothing,
   mild_detection_modulation=nothing,
@@ -179,11 +176,9 @@ function make_params(
 
   num_individuals = individuals_df |> nrow
 
-  @assert num_individuals == length(progressions)
-
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
-  strain_table = make_strains(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier)
+  strain_immunity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier)
 
   age_coupling_kernel_params =
     if nothing === age_coupling_weights && nothing === age_coupling_thresholds && nothing === age_coupling_param; nothing
@@ -233,9 +228,8 @@ function make_params(
     individuals_df.age,
     individuals_df.gender,
 
-    progressions,
-
-    strain_table,
+    progression_params,
+    strain_immunity_table,
 
     constant_kernel_param,
     household_kernel_param,
