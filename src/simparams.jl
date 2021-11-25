@@ -85,23 +85,24 @@ milddetectiondelaydist(p::SimParams) = Uniform(p.mild_detection_delay, nextfloat
 forwarddetectiondelaydist(params::SimParams) = Exponential(params.forward_detection_delay)
 backwarddetectiondelaydist(params::SimParams) = Exponential(params.backward_detection_delay)
 
-function load_params(rng=MersenneTwister(0);
-        population::DataFrame,
+function load_params(
+  rng=MersenneTwister(0);
+  population::DataFrame,
 
-        infection_modulation_name::Union{Nothing,AbstractString} = nothing,
-        infection_modulation_params::NamedTuple = NamedTuple{}(),
+  infection_modulation_name::Union{Nothing,AbstractString} = nothing,
+  infection_modulation_params::NamedTuple = NamedTuple{}(),
 
-        mild_detection_modulation_name::Union{Nothing, AbstractString} = nothing,
-        mild_detection_modulation_params::NamedTuple = NamedTuple{}(),
+  mild_detection_modulation_name::Union{Nothing, AbstractString} = nothing,
+  mild_detection_modulation_params::NamedTuple = NamedTuple{}(),
 
-        forward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
-        forward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
+  forward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
+  forward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
 
-        backward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
-        backward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
+  backward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
+  backward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
 
-        kwargs...
-        )
+  kwargs...
+  )
 
   individuals_df::DataFrame = population
 
@@ -134,12 +135,6 @@ function make_params(
   forward_tracing_modulation=nothing,
   backward_tracing_modulation=nothing,
 
-  screening_params::Union{Nothing,ScreeningParams}=nothing,
-
-  hospital_kernel_param::Float64=0.0,
-  healthcare_detection_prob::Float64=0.8,
-  healthcare_detection_delay::Float64=1.0,
-
   constant_kernel_param::Float64=1.0,
   household_kernel_param::Float64=1.0,
 
@@ -153,24 +148,30 @@ function make_params(
   forward_tracing_prob::Float64=0.0,
   forward_detection_delay::Float64=1.0,
 
-  quarantine_length::Float64=14.0,
   testing_time::Float64=1.0,
+  quarantine_length::Float64=14.0,
 
-  phone_tracing_usage::Real=0.0,
-  phone_detection_delay::Real=0.25,
-  phone_tracing_usage_by_household::Bool=false,
+  age_coupling_param::Union{Nothing, Real}=nothing,
+  age_coupling_thresholds::Union{Nothing, AbstractArray{T} where T<:Real}=nothing,
+  age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
+  age_coupling_use_genders::Bool=false,
+
+  screening_params::Union{Nothing,ScreeningParams}=nothing,
 
   spreading_alpha::Union{Nothing,Real}=nothing,
   spreading_x0::Real=1,
   spreading_truncation::Real=Inf,
 
+  phone_tracing_usage::Real=0.0,
+  phone_detection_delay::Real=0.25,
+  phone_tracing_usage_by_household::Bool=false,
+
   british_strain_multiplier::Real=1.70,
   delta_strain_multiplier::Real=1.7*1.5,
 
-  age_coupling_thresholds::Union{Nothing, AbstractArray{T} where T<:Real}=nothing,
-  age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
-  age_coupling_use_genders::Bool=false,
-  age_coupling_param::Union{Nothing, Real}=nothing,
+  hospital_kernel_param::Float64=0.0,
+  healthcare_detection_prob::Float64=0.8,
+  healthcare_detection_delay::Float64=1.0,
 )
   sort!(individuals_df, :household_index)
 
