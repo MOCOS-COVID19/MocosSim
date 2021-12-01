@@ -59,7 +59,7 @@ function sample_if_death(rng::AbstractRNG, severity::Severity)
   rand(rng) < death_prob
 end
 
-function sample_progression(rng::AbstractRNG, progression_data::ProgressionParams, age::Real, gender::Bool, immunity::ImmunityState, strain::StrainKind)
+function sample_progression(rng::AbstractRNG, progression_data::ProgressionParams, age::Real, gender::Bool, immunity::ImmunityState, time_since_immunization::Real, strain::StrainKind)
   #TODO expecting updated progression generation soon
   sample_progression(
     rng,
