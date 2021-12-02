@@ -14,7 +14,7 @@ function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::
   mat
 end
 
-struct Immunization
+struct ImmunizationOrder
   times::Vector{TimePoint}
   subjects::Vector{PersonIdx}
   immunity_kinds::Vector{ImmunityState}
@@ -23,7 +23,7 @@ end
 rawinfectivity(table::StrainImmunityTable, strain::StrainKind) = table[UInt(1), UInt(strain)]
 condinfectivity(table::StrainImmunityTable, immunity::ImmunityState, strain::StrainKind) = table[UInt(immunity), UInt(strain)] / table[UInt(1), UInt(strain)]
 
-function immunize!(state::SimState, immunization::Immunization; enqueue::Bool)::Nothing
+function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bool)::Nothing
   N = length(immunization.times)
   @assert N == length(immunization.subjects) == length(immunization.immunity_kinds)
   @assert issorted(immunization.times)

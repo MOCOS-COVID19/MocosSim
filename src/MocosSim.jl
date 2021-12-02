@@ -20,6 +20,7 @@ import Distributions.sample
 
 const TimePoint = Fixed{Int32, 16}
 const TimeDiff = Fixed{Int32, 16}
+const TimeDay = Int16
 const PersonIdx=UInt32
 
 include("utils.jl")
