@@ -24,6 +24,7 @@ end
   ChineseStrain
   BritishStrain
   DeltaStrain
+  OmicronStrain
 end
 
 const NUM_STRAINS = length(instances(StrainKind)) - 1

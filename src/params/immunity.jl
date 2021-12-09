@@ -1,12 +1,12 @@
 const StrainImmunityTable = SMatrix{NUM_IMMUNITIES, NUM_STRAINS, Float64, NUM_IMMUNITIES*NUM_STRAINS }
 
-function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::Real=1.70, delta_multiplier::Real=1.7*1.5)::StrainImmunityTable
+function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::Real=1.70, delta_multiplier::Real=1.7*1.5, omicron_multiplier::Real=1.7*1.5*2.0)::StrainImmunityTable
   # needs validation with real data
   mat = @SMatrix [
-    1.00    1.70    2.55;
-    0.01    0.01    0.10;
-    0.10    0.10    0.50;
-    0.03    0.10    0.30;
+    1.00    1.70    2.55    5.10;
+    0.01    0.01    0.10    0.60;
+    0.10    0.10    0.50    0.75;
+    0.03    0.10    0.30    0.75;
   ]
 
   @assert all( mat .>= 0)
