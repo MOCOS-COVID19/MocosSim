@@ -20,6 +20,7 @@ import Distributions.sample
 
 const TimePoint = Fixed{Int32, 16}
 const TimeDiff = Fixed{Int32, 16}
+const TimeDay = Int16
 const PersonIdx=UInt32
 
 include("utils.jl")
@@ -40,8 +41,7 @@ include("infection_kernels.jl")
 export simulate!
 export Event
 
-function simulate!(state::SimState,
-                   params::SimParams)
+function simulate!(state::SimState, params::SimParams)
   while true
     if isempty(state.queue)
       break
@@ -53,7 +53,6 @@ function simulate!(state::SimState,
 end
 
 function simulate!(state::SimState, params::SimParams, callback)
-  iter_no = 0
   while true
     if isempty(state.queue)
       break
@@ -69,8 +68,6 @@ function simulate!(state::SimState, params::SimParams, callback)
          break
        end
     end
-
-    iter_no+=1
   end
   nothing
 end

@@ -30,7 +30,8 @@ function execute!(kind::EventKind, state::SimState, params::SimParams, event::Ev
   elseif TracedEvent==kind;                     return execute!(Val(TracedEvent), state, params, event)
   elseif QuarantinedEvent==kind;                return execute!(Val(QuarantinedEvent), state, params, event)
   elseif QuarantineEndEvent==kind;              return execute!(Val(QuarantineEndEvent), state, params, event)
-  elseif ScreeningEvent==kind;                   return execute!(Val(ScreeningEvent), state, params, event)
+  elseif ImmunizationEvent==kind;               return execute!(Val(ImmunizationEvent), state, params, event)
+  elseif ScreeningEvent==kind;                  return execute!(Val(ScreeningEvent), state, params, event)
   else error("unsupported event kind $kind")
   end
   return true
@@ -51,8 +52,21 @@ function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimPara
 
   setsubjecthealth!(state, event, Incubating)
 
+  subject_id = subject(event)
+
+  progression = sample_progression(state.rng, params.progression_params,
+    age(params, subject_id),
+    gender(params, subject_id),
+    immunityof(state, subject_id),
+    timesinceimmunization(state, subject_id),
+    strainkind(event)
+  )
+
+  setprogression!(state, subject_id, progression)
+
   registerinfection!(state, event)
-  incubation_time = progressionof(params, subject(event)).incubation_time
+
+  incubation_time = progression.incubation_time
   @assert !ismissing(incubation_time)
   event = Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event))
   push!(state.queue, event)
@@ -65,7 +79,7 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
   end
 
   source_health = sourcehealth(state, event)
-  @assert contactkind(event)==HospitalContact || source_health ∉ SA[Healthy, Incubating, SevereSymptoms, CriticalSymptoms, Dead, Recovered] "infection time exceeds infectability time frame, source is now in state $source_health, the event is $event source progressions are $(progressionof(params, source(event)))"
+  @assert contactkind(event)==HospitalContact || source_health ∉ SA[Healthy, Incubating, SevereSymptoms, CriticalSymptoms, Dead, Recovered] "infection time exceeds infectability time frame, source is now in state $source_health, the event is $event source progressions are $(progressionof(state, source(event)))"
 
   # the transmission events are queued in advace, therefore it might be the case that it can not be realized
   # for the transmission to happen both source and subject must be free or both must be staying at home in case
@@ -85,15 +99,24 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
 
   @assert contactkind(event) == HospitalContact || (contactkind(event) == HouseholdContact) || (!isquarantined(state, source(event)) && !isquarantined(state, subject(event))) "the event $event should not be executed because subject state is $(state.individuals[subject(event)]) and source state is $(state.individuals[source(event)])"
 
-  if params.infection_modulation_function !== nothing && !params.infection_modulation_function(state, params, event)::Bool
+  if !infectionsuccess(state, params, event)
     return false
   end
 
   setsubjecthealth!(state, event, Incubating)
 
+  progression = sample_progression(state.rng, params.progression_params,
+    age(params, subject(event)),
+    gender(params, subject(event)),
+    immunityof(state, subject(event)),
+    timesinceimmunization(state, subject(event)),
+    strainkind(event)
+  )
+  setprogression!(state, subject(event), progression)
+
   registerinfection!(state, event)
 
-  incubation_time = progressionof(params, subject(event)).incubation_time
+  incubation_time = progression.incubation_time
   @assert !ismissing(incubation_time)
   push!(state.queue,
     Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event))
@@ -111,7 +134,7 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
 
   sethealth!(state, subject_id, Infectious)
 
-  progression = params.progressions[subject_id]
+  progression = progressionof(state, subject_id)
 
   severity = progression.severity
 
@@ -142,8 +165,9 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
   if ishealthcare(params, subject_id) && rand(state.rng) < params.hospital_kernel_params.healthcare_detection_prob
     delay = rand(state.rng, Exponential(params.hospital_kernel_params.healthcare_detection_delay))
     push!(state.queue, Event(Val(DetectionEvent), time(event)+delay, subject_id, OutsideQuarantineDetection))
-  elseif(rand(state.rng) < params.mild_detection_prob)
-    push!(state.queue, Event(Val(DetectionEvent), time(event)+2, subject_id, OutsideQuarantineDetection))
+  elseif rand(state.rng) < milddetectionprob(state, params)
+    delay = rand(state.rng, milddetectiondelaydist(params))
+    push!(state.queue, Event(Val(DetectionEvent), time(event)+delay, subject_id, OutsideQuarantineDetection))
   end
   return true
 end
@@ -153,7 +177,7 @@ function execute!(::Val{MildSymptomsEvent}, state::SimState, params::SimParams, 
   setsubjecthealth!(state, event, MildSymptoms)
   subject_id = subject(event)
 
-  progression = progressionof(params, subject_id)
+  progression = progressionof(state, subject_id)
   @assert !ismissing(progression.mild_symptoms_time)
 
   infection_time = time(event) - progression.mild_symptoms_time
@@ -181,7 +205,7 @@ function execute!(::Val{SevereSymptomsEvent}, state::SimState, params::SimParams
 
   subject_id = subject(event)
 
-  progression = progressionof(params, subject_id)
+  progression = progressionof(state, subject_id)
 
   #push!(state.queue, RecoveryEvent(time(event)+14, subject(event)))
   event = Event(Val(GoHospitalEvent), time(event), subject(event))
@@ -242,9 +266,9 @@ end
 
 function execute!(::Val{GoHospitalEvent}, state::SimState, params::SimParams, event::Event)::Bool
   @assert SevereSymptoms == subjecthealth(state, event)
-  severity = severityof(params, subject(event))
-  @assert severity in SA[Severe, Critical]
   subject_id = subject(event)
+
+  @assert progressionof(state, subject_id).severity in SA[Severe, Critical]
 
   is_from_quarantine = isquarantined(state, subject_id)
 
@@ -384,6 +408,13 @@ function execute!(::Val{QuarantineEndEvent}, state::SimState, params::SimParams,
   return true
 end
 
+function execute!(::Val{ImmunizationEvent}, state::SimState, params::SimParams, event::Event)::Bool
+  subject_id = subject(event)
+  new_immunity = immunitystate(event)
+  setimmunity!(state, subject_id, new_immunity)
+  return true
+end
+
 #
 # Quarantine and backtracing helpers
 #
@@ -450,8 +481,8 @@ function backtrace!(state::SimState, params::SimParams, person_id::Integer; trac
       rand(state.rng) < params.phone_tracing_params.detection_prob
       detection_delay = rand(state.rng, Exponential(params.phone_tracing_params.detection_delay))
     push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, backward_id, person_id, PhoneTraced))
-  elseif rand(state.rng) < params.backward_tracing_prob
-    detection_delay = rand(state.rng, Exponential(params.backward_detection_delay))
+  elseif rand(state.rng) < backwardtracingprob(state, params)
+    detection_delay = rand(state.rng, backwarddetectiondelaydist(params))
     push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, backward_id, person_id, ClassicalTraced))
   end
   nothing
@@ -494,8 +525,8 @@ function forwardtrace!(state::SimState, params::SimParams, person_id::Integer; t
         rand(state.rng) < params.phone_tracing_params.detection_prob
         detection_delay = rand(state.rng, Exponential(params.phone_tracing_params.detection_delay))
       push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, forward_id, person_id, PhoneTraced))
-    elseif rand(state.rng) < params.forward_tracing_prob
-      detection_delay = rand(state.rng, Exponential(params.forward_detection_delay))
+    elseif rand(state.rng) < forwardtracingprob(state, params)
+      detection_delay = rand(state.rng, forwarddetectiondelaydist(params))
       push!(state.queue, Event(Val(TracedEvent), current_time + detection_delay, forward_id, person_id, ClassicalTraced))
     end
 

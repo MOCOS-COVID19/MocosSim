@@ -1,9 +1,10 @@
 name = "MocosSim"
 uuid = "af72bc66-7bc2-4ee8-90df-e21de508fcd7"
 authors = ["Tomasz Ożański <tomasz.ozanski@pwr.edu.pl>"]
-version = "0.3.8"
+version = "0.4.0"
 
 [deps]
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
