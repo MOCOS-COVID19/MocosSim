@@ -1,7 +1,7 @@
 dist: bionic
 language: julia
 julia:
-  - 1.6.2
+  - 1.7.0
 script:
   - julia -e 'using Pkg; Pkg.test(;coverage=true)'
   - julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile();'
