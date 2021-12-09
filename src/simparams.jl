@@ -168,6 +168,7 @@ function make_params(
 
   british_strain_multiplier::Real=1.70,
   delta_strain_multiplier::Real=1.7*1.5,
+  omicron_strain_multiplier::Real=1.7*1.5*2.0,
 
   hospital_kernel_param::Float64=0.0,
   healthcare_detection_prob::Float64=0.8,
@@ -179,7 +180,7 @@ function make_params(
 
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
-  strain_immunity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier)
+  strain_immunity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier,omicron_multiplier=omicron_strain_multiplier)
 
   age_coupling_kernel_params =
     if nothing === age_coupling_weights && nothing === age_coupling_thresholds && nothing === age_coupling_param; nothing
