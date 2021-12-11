@@ -33,8 +33,10 @@ const NUM_STRAINS = length(instances(StrainKind)) - 1
   NullImmunity = 0
   NoImmunity
   NaturalImmunity
-  VecVacImmunity
-  MRNAVacImmunity
+  VacImmunity
+  VacNaturalImmunity
+  BoostImmunity
+  BoostNaturalImmunity
 end
 
 const NUM_IMMUNITIES = length(instances(ImmunityState)) - 1

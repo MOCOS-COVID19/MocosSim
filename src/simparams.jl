@@ -89,7 +89,7 @@ milddetectionprob(s::SimState, p::SimParams) = p.mild_detection_prob * evalmodul
 forwardtracingprob(s::SimState, p::SimParams) = p.forward_tracing_prob * evalmodulation(p.forward_tracing_modulation, s, p)
 backwardtracingprob(s::SimState, p::SimParams) = p.backward_tracing_prob * evalmodulation(p.backward_tracing_modulation, s, p)
 
-milddetectiondelaydist(p::SimParams) = Uniform(p.mild_detection_delay, nextfloat(p.mild_detection_delay))
+milddetectiondelaydist(p::SimParams) = Exponential(p.mild_detection_delay)
 forwarddetectiondelaydist(params::SimParams) = Exponential(params.forward_detection_delay)
 backwarddetectiondelaydist(params::SimParams) = Exponential(params.backward_detection_delay)
 
@@ -109,12 +109,17 @@ function load_params(
   backward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
   backward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
 
+  effectiveness_table::Matrix{Float64} = Float64[0.0 0.0 0.0 0.0], 
+  hospitalization_time_ratio::Float64=1.0,
+  hospitalization_multiplier::Float64=1.0, 
+  death_multiplier::Float64=1.0,
+
   kwargs...
   )
 
   individuals_df::DataFrame = population
 
-  progression_params::ProgressionParams = make_progression_params()
+  progression_params::ProgressionParams = make_progression_params(effectiveness_table, hospitalization_time_ratio, hospitalization_multiplier, death_multiplier)
 
   infection_modulation = make_infection_modulation(infection_modulation_name; infection_modulation_params...)
   mild_detection_modulation = make_infection_modulation(mild_detection_modulation_name; mild_detection_modulation_params...)

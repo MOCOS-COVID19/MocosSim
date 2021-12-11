@@ -42,7 +42,10 @@ rng = Random.MersenneTwister(0);
 
   forward_detection_delay=1.75,
   backward_detection_delay=1.75,
-  testing_time=3.0
+  testing_time=3.0,
+  hospitalization_time_ratio = 0.5,
+  hospitalization_multiplier=1.5,
+  death_multiplier = 0.5
 );
 
 mutable struct Callback
@@ -58,6 +61,13 @@ end
 @info "initializing state"
 @time MocosSim.reset!(state, MersenneTwister(0))
 @time MocosSim.InstantOutsideCases(;num_infections=100)(state, params)
+
+immunization_thresholds = Int32[0, 18, 40]
+immunization_table = Float32[0.25 0.00;
+                             0.50 0.25;
+                             0.75 0.50]
+immunization_previously_infected  = Float32[0.24, 0.24, 0.24]                          
+MocosSim.immunize!(state, params, immunization_thresholds, immunization_table,immunization_previously_infected)
 
 @info "warm-up"
 cb = Callback(50, 0)

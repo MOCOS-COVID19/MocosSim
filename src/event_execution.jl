@@ -410,7 +410,7 @@ end
 
 function execute!(::Val{ImmunizationEvent}, state::SimState, params::SimParams, event::Event)::Bool
   subject_id = subject(event)
-  new_immunity = immunitystate(event)
+  new_immunity = immunitykind(event)
   setimmunity!(state, subject_id, new_immunity)
   return true
 end
