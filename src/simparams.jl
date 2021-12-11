@@ -3,6 +3,8 @@ using Distributions
 #using FunctionWrappers
 
 const Age=UInt8
+const ImmunityRand = Normed{UInt32, 32}
+
 abstract type AbstractSimParams end
 
 abstract type InfectionModulation end
@@ -26,6 +28,7 @@ struct SimParams <: AbstractSimParams
 
   ages::Vector{Age}
   genders::BitVector
+  immunity_rand::Vector{ImmunityRand}
 
   progression_params::ProgressionParams
   strain_immunity_table::StrainImmunityTable
@@ -62,6 +65,8 @@ end
 numindividuals(params::SimParams) = length(params.household_ptrs)
 rawinfectivity(params::SimParams, strain::StrainKind) = rawinfectivity(params.strain_immunity_table, strain)
 condinfectivity(params::SimParams, immunity::ImmunityState, strain::StrainKind) = condinfectivity(params.strain_immunity_table, immunity, strain)
+
+condisimmune(params::SimParams, subject_id::Integer, immunity::ImmunityState, strain::StrainKind) = params.immunity_rand[subject_id] >= condinfectivity(params, immunity, strain)
 
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
 age(params::SimParams, person_id::Integer) = params.ages[person_id]
@@ -229,6 +234,7 @@ function make_params(
     household_ptrs,
     individuals_df.age,
     individuals_df.gender,
+    reinterpret(ImmunityRand, rand(rng, UInt32, num_individuals)),
 
     progression_params,
     strain_immunity_table,

@@ -2,6 +2,9 @@ const StrainImmunityTable = SMatrix{NUM_IMMUNITIES, NUM_STRAINS, Float64, NUM_IM
 
 function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::Real=1.70, delta_multiplier::Real=1.7*1.5, omicron_multiplier::Real=1.7*1.5*2.0)::StrainImmunityTable
   # needs validation with real data
+
+  #each column is distinct StrainKind
+  #each row is distinct ImmunityState
   mat = @SMatrix [
     1.00    1.70    2.55    5.10;
     0.01    0.01    0.10    0.60;
