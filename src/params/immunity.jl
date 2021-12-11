@@ -7,9 +7,9 @@ function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::
   #each row is distinct ImmunityState
   mat = @SMatrix [
     1.00    1.70    2.55    5.10;
-    0.01    0.01    0.10    0.60;
-    0.10    0.10    0.50    0.75;
-    0.03    0.10    0.30    0.75;
+    0.01    0.01    0.10    0.14;
+    0.10    0.10    0.50    0.625;
+    0.03    0.10    0.30    0.375;
   ]
 
   @assert all( mat .>= 0)
@@ -25,6 +25,7 @@ end
 
 rawinfectivity(table::StrainImmunityTable, strain::StrainKind) = table[UInt(1), UInt(strain)]
 condinfectivity(table::StrainImmunityTable, immunity::ImmunityState, strain::StrainKind) = table[UInt(immunity), UInt(strain)] / table[UInt(1), UInt(strain)]
+immunited(immunity::ImmunityState) = immunity != NoImmunity
 
 function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bool)::Nothing
   N = length(immunization.times)
