@@ -31,7 +31,7 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
       subject_id +=1
     end
 
-    if Healthy == health(state, subject_id) && rand(state.rng) < condinfectivity(params, immunityof(state, subject_id), strain)
+    if Healthy == health(state, subject_id) && !condisimmune(params, subject_id, immunityof(state, subject_id), strain)
       infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
       @assert state.time <= infection_time <= (end_time-start_time + state.time)
       push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, ConstantKernelContact, strain))
@@ -64,7 +64,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
   time_dist = Exponential(mean_infection_time)
 
   for subject_id in household
-    if subject_id == source_id || Healthy != health(state, subject_id) || rand(state.rng) >= condinfectivity(params, immunityof(state, subject_id), strain)
+    if subject_id == source_id || Healthy != health(state, subject_id) || !condisimmune(params, subject_id, immunityof(state, subject_id), strain)
       continue
     end
 
@@ -118,7 +118,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HospitalContact}, source_
       continue
     end
 
-    if Healthy == health(state, subject_id) && rand(state.rng) < condinfectivity(params, immunityof(state, subject_id), strain)
+    if Healthy == health(state, subject_id) && !condisimmune(params, d, immunityof(state, subject_id), strain)
       infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
       @assert state.time <= infection_time <= (end_time-start_time + state.time)
       push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, HospitalContact))
@@ -162,7 +162,7 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
       break
     end
 
-    if Healthy == health(state, subject_id) && rand(state.rng) < condinfectivity(params, immunityof(state, subject_id), strain)
+    if Healthy == health(state, subject_id) && !condisimmune(params, subject_id, immunityof(state, subject_id), strain)
       infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
       @assert state.time <= infection_time <= (end_time-start_time + state.time)
       push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, AgeCouplingContact, strain))
