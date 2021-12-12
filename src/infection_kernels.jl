@@ -118,7 +118,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HospitalContact}, source_
       continue
     end
 
-    if Healthy == health(state, subject_id) && !condisimmune(params, subject_d, immunityof(state, subject_id), strain)
+    if Healthy == health(state, subject_id) && !condisimmune(params, subject_id, immunityof(state, subject_id), strain)
       infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
       @assert state.time <= infection_time <= (end_time-start_time + state.time)
       push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, HospitalContact))
