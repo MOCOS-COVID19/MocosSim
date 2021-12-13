@@ -28,31 +28,29 @@ condinfectivity(table::StrainImmunityTable, immunity::ImmunityState, strain::Str
 immunited(immunity::ImmunityState) = immunity != NoImmunity
 
 function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bool)::Nothing
+  @info "Immunizing"
   N = length(immunization.times)
   @assert N == length(immunization.subjects) == length(immunization.immunity_kinds)
   @assert issorted(immunization.times)
 
   current_time = time(state)
-  i = 1
-
-  while i <= N && current_time <= immunization.times[i]
-    setimmunity!(state, immunization.subjects[i], immunization.immunity_kinds[i])
-  end
-
-  if !enqueue
-    return nothing
-  end
-
-  while i <= N
-    push!(state.queue,
-      Event(
-        Val(ImmunizationEvent),
-        immunization.times[i],
-        immunization.subjects[i],
-        immunization.immunity_kinds[i],
+  count = 0
+  for i in 1:N
+    if current_time > immunization.times[i]
+      setimmunity!(state, immunization.subjects[i], immunization.immunity_kinds[i])
+    elseif enqueue
+      push!(state.queue,
+        Event( Val(ImmunizationEvent),
+          immunization.times[i],
+          immunization.subjects[i],
+          immunization.immunity_kinds[i]
+        )
       )
-    )
+    end
   end
+
+  @info "Immunized $count individuals"
+
 
   nothing
 end
