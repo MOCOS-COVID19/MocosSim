@@ -6,10 +6,10 @@ function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::
   #each column is distinct StrainKind
   #each row is distinct ImmunityState
   mat = @SMatrix [
-    1.00    1.70    2.55    5.10;
-    0.01    0.01    0.10    0.14;
-    0.10    0.10    0.50    0.625;
-    0.03    0.10    0.30    0.375;
+    1.00   1.70   2.55    5.10;
+    0.01   0.017  0.255   3.06;
+    0.10   0.17   1.225   3.4;
+    0.03   0.17   0.765   3.4;
   ]
 
   @assert all( mat .>= 0)

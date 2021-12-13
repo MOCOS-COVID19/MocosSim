@@ -64,7 +64,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
   time_dist = Exponential(mean_infection_time)
 
   for subject_id in household
-    if subject_id == source_id || Healthy != health(state, subject_id) || !condisimmune(params, subject_id, immunityof(state, subject_id), strain)
+    if subject_id == source_id || Healthy != health(state, subject_id) || condisimmune(params, subject_id, immunityof(state, subject_id), strain)
       continue
     end
 
