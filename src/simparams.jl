@@ -22,6 +22,7 @@ include("params/phonetracing.jl")
 include("params/spreading.jl")
 include("params/outside_cases.jl")
 include("params/screening.jl")
+include("params/splitage_coupling.jl")
 
 struct SimParams <: AbstractSimParams
   household_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}  # (i1,i2) where i1 and i2 are the indices of first and last member of the household
@@ -35,8 +36,9 @@ struct SimParams <: AbstractSimParams
 
   constant_kernel_param::Float32
   household_kernel_param::Float32
-  age_coupling_params::Union{Nothing, AgeCouplingParams} # nothing if kernel not active
-  hospital_kernel_params::Union{Nothing, HospitalInfectionParams}  # nothing if hospital kernel not active
+  age_coupling_params::Union{Nothing, AgeCouplingParams}            # nothing if kernel not active
+  splitage_coupling_params::Union{Nothing, SplitAgeCouplingParams}  # nothing if kernel not active
+  hospital_kernel_params::Union{Nothing, HospitalInfectionParams}   # nothing if hospital kernel not active
 
   hospital_detections::Bool
   mild_detection_prob::Float64
@@ -157,9 +159,13 @@ function make_params(
   quarantine_length::Float64=14.0,
 
   age_coupling_param::Union{Nothing, Real}=nothing,
-  age_coupling_thresholds::Union{Nothing, AbstractArray{T} where T<:Real}=nothing,
+  age_coupling_thresholds::Union{Nothing, AbstractVector{T} where T<:Real}=nothing,
   age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
   age_coupling_use_genders::Bool=false,
+
+  split_group_ids::Union{Nothing, AbstractVector{T} where T<:Integer}=nothing,
+  split_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
+  splitage_kernel_param::Union{Nothing, Real}=nothing,
 
   screening_params::Union{Nothing,ScreeningParams}=nothing,
 
@@ -199,6 +205,17 @@ function make_params(
         age_coupling_param
         )
     else error("age couplig params not fully given")
+    end
+
+  splitage_coupling_kernel_params =
+    if nothing === age_coupling_weights || nothing === split_coupling_weights || splitage_couplig_param; nothing
+    else
+      SplitAgeCouplingParams(
+        individuals_df.age,
+        age_coupling_use_genders === nothing ? individuals_df.gender : nothing,
+        age_coupling_thresholds, age_coupling_weights,
+        split_group_ids, split_coupling_weights
+        )
     end
 
   hospital_kernel_params =
@@ -242,6 +259,7 @@ function make_params(
     constant_kernel_param,
     household_kernel_param,
     age_coupling_kernel_params,
+    splitage_coupling_kernel_params,
     hospital_kernel_params,
 
     hospital_detections,

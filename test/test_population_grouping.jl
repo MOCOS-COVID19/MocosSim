@@ -34,6 +34,7 @@
       @test length(sizes) == num_groups
       for i in 1:MocosSim.numgroups(grouping)
         @test length(MocosSim.getgroup(grouping, i)) == sizes[i]
+        @test MocosSim.groupsize(grouping, i) == sizes[i]
       end
     end
   end

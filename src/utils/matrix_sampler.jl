@@ -23,7 +23,7 @@ function MatrixAliasSampler(probs::AbstractMatrix{T}, IdxType::Type=Int) where T
     setup_alias_sampler!(weights, acceptances, aliases, smalls, larges, sum(weights))
   end
   MatrixAliasSampler{IdxType, T}(acceptances_mat, aliases_mat)
-  end
+end
 
 function sample(rng::AbstractRNG, m::MatrixAliasSampler, source::Integer)
   N, M = m.aliases_mat |> size
