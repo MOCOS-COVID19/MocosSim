@@ -32,8 +32,8 @@ const death_probs_age = [0.6666666666666666, 0.5945945945945946, 0.7538461538461
 const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_probs)
 const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
-const age_vaccination_thresholds_Poland = Int[0, 12, 18, 25, 50, 60, 70, 80]
-const vaccination_uptakes_probs_age_Poland = [0.0, 0.123, 0.483, 0.54, 0.648, 0.728, 0.885, 0.698]
+const age_vaccination_thresholds_Poland = Int[0, 5, 10, 15, 18, 25, 50, 60]
+const vaccination_uptakes_probs_age_Poland = [0.0, 0.0, 0.208, 0.458, 0.508, 0.563, 0.656, 0.75]
 
 const age_vaccination_thresholds_Lower_Silesia = Int[0, 12, 20, 40, 60, 70]
 const vaccination_uptakes_probs_age_Lower_Silesia = [0.0, 0.3367, 0.4851, 0.5987, 0.6998, 0.8246]
@@ -41,11 +41,11 @@ const vaccination_uptakes_probs_age_Lower_Silesia = [0.0, 0.3367, 0.4851, 0.5987
 const age_vaccination_thresholds_Saxony = Int[0, 12, 18, 60]
 const vaccination_uptakes_probs_age_Saxony = [0.0, 0.267, 0.58, 0.789]
 
-const age_vaccination_thresholds = age_vaccination_thresholds_Saxony
-const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Saxony
+const age_vaccination_thresholds = age_vaccination_thresholds_Poland
+const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Poland
 const vaccination_severe_effectiveness = 0.875
 const vaccination_critical_effectiveness = 0.92
-const vaccination_mild_effectiveness = 0.75
+const vaccination_mild_effectiveness = 0.33
 #[0, 0.6, 0.85, 0.85] # Asymptomatic=1 Mild Severe Critical
 function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages, vaccinated::Bool)
   if age < 0
