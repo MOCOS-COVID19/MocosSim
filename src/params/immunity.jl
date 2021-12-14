@@ -38,6 +38,7 @@ function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bo
   for i in 1:N
     if current_time > immunization.times[i]
       setimmunity!(state, immunization.subjects[i], immunization.immunity_kinds[i])
+      count += 1
     elseif enqueue
       push!(state.queue,
         Event( Val(ImmunizationEvent),
