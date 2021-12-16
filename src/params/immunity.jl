@@ -34,9 +34,11 @@ function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bo
 
   current_time = time(state)
   count = 0
+  enqueued = 0
   for i in 1:N
     if immunization.times[i] <= current_time
       setimmunity!(state, immunization.subjects[i], immunization.immunity_kinds[i])
+      count += 1
     elseif enqueue
       push!(state.queue,
         Event( Val(ImmunizationEvent),
@@ -45,10 +47,11 @@ function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bo
           immunization.immunity_kinds[i]
         )
       )
+      enqueued += 1
     end
   end
 
-  @info "Immunized $count individuals"
+  @info "Executed $N entires: immunized $count individuals and enqueued $enqueued "
 
 
   nothing
