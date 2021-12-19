@@ -42,7 +42,8 @@ rng = Random.MersenneTwister(0);
 
   forward_detection_delay=1.75,
   backward_detection_delay=1.75,
-  testing_time=3.0
+  testing_time=3.0,
+  ifr = 1.0
 );
 
 mutable struct Callback
