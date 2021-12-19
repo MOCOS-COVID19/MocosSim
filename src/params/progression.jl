@@ -54,7 +54,7 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dis
   severity
 end
 
-function sample_if_death(rng::AbstractRNG, severity::Severity, age::Real)
+function sample_if_death(rng::AbstractRNG, severity::Severity, age::Real, ifr::Real)
   if age < 0
     error("age should be non-negative")
   end
@@ -62,11 +62,11 @@ function sample_if_death(rng::AbstractRNG, severity::Severity, age::Real)
   if severity != Critical
     return false
   end
-  death_prob = death_probs_age[agegroup(age_hospitalization_thresholds, age)]
+  death_prob = ifr * death_probs_age[agegroup(age_hospitalization_thresholds, age)]
   rand(rng) < death_prob
 end
 
-@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool,
+@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, ifr::Real,
     dist_incubation,
     dist_symptom_onset,
     dist_hospitalization,
@@ -116,7 +116,7 @@ end
     end
   end
 
-  if sample_if_death(rng, severity, age) # vaccine effect was already considered, no need to modify here
+  if sample_if_death(rng, severity, age, ifr) # vaccine effect was already considered, no need to modify here
     death_time = incubation_time + rand(rng, dist_death_time)
     if death_time < severe_symptoms_time
       severe_symptoms_time = death_time
@@ -144,6 +144,7 @@ function resample!(
   rng::AbstractRNG,
   progressions, ages::AbstractVector{T} where T <: Real,
   genders::AbstractVector{Bool},
+  ifr::Real,
   dist_incubation_time,
   dist_symptom_onset_time,
   dist_hospitalization_time,
@@ -155,7 +156,7 @@ function resample!(
   vaccination_uptakes_probs_age)
 
   for i in 1:length(ages) # ages is +1 as we have older population now
-    progressions[i] = sample_progression(rng, ages[i] + 1, genders[i],
+    progressions[i] = sample_progression(rng, ages[i] + 1, genders[i], ifr,
       dist_incubation_time,
       dist_symptom_onset_time,
       dist_hospitalization_time,

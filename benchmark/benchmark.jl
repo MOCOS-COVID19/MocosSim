@@ -44,7 +44,8 @@ rng = Random.MersenneTwister(0);
   backward_detection_delay=1.75,
   testing_time=3.0,
   age_vaccination_thresholds = Int[0, 12, 18, 60],
-  vaccination_uptakes_probs_age = Float32[0.0, 0.36, 0.62, 0.80]
+  vaccination_uptakes_probs_age = Float32[0.0, 0.36, 0.62, 0.80],
+  ifr = 1.0
 );
 
 mutable struct Callback

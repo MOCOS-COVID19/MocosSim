@@ -83,6 +83,7 @@ function load_params(rng=MersenneTwister(0);
         infection_modulation_params::NamedTuple=NamedTuple{}(),
         age_vaccination_thresholds::Vector{Int},
         vaccination_uptakes_probs_age::Vector{Float32},
+        ifr::Real,
         kwargs...
         )
 
@@ -99,7 +100,7 @@ function load_params(rng=MersenneTwister(0);
   severity_dists_ages = make_severity_dists_ages(hospitalization_men_probs, hospitalization_women_probs)
 
   progressions = Vector{Progression}(undef, num_individuals);
-  resample!(rng, progressions, individuals_df.age, individuals_df.gender,
+  resample!(rng, progressions, individuals_df.age, individuals_df.gender, ifr,
     dist_incubation_time,
     dist_symptom_onset_time,
     dist_hospitalization_time,
