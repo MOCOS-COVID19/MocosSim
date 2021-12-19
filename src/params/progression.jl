@@ -48,16 +48,7 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dis
   dist = severity_dists_ages[idx][age < max_age_hosp ? age + 1 : max_age_hosp]
   severity_int = rand(rng, dist)
   severity = rand(rng, dist) |> Severity
-
-  if (severity==Critical) && vaccinated && rand(rng) < vaccination_critical_effectiveness
-    severity = Severe
-  end
-
-  if (severity==Severe) && vaccinated && rand(rng) < vaccination_severe_effectiveness
-    severity = Mild
-  end
-
-  if (severity==Mild) && vaccinated && rand(rng) < vaccination_mild_effectiveness
+  if vaccinated
     severity = Asymptomatic
   end
   severity
