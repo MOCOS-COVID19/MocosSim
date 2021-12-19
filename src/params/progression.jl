@@ -32,17 +32,6 @@ const death_probs_age = [0.6666666666666666, 0.5945945945945946, 0.7538461538461
 const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_probs)
 const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
-const age_vaccination_thresholds_Poland = Int[0, 5, 10, 15, 18, 25, 50, 60]
-const vaccination_uptakes_probs_age_Poland = [0.0, 0.0, 0.208, 0.458, 0.508, 0.563, 0.656, 0.75]
-
-const age_vaccination_thresholds_Lower_Silesia = Int[0, 12, 20, 40, 60, 70]
-const vaccination_uptakes_probs_age_Lower_Silesia = [0.0, 0.3367, 0.4851, 0.5987, 0.6998, 0.8246]
-
-const age_vaccination_thresholds_Saxony = Int[0, 12, 18, 60]
-const vaccination_uptakes_probs_age_Saxony = [0.0, 0.36, 0.62, 0.80]
-
-const age_vaccination_thresholds = age_vaccination_thresholds_Saxony
-const vaccination_uptakes_probs_age = vaccination_uptakes_probs_age_Saxony
 const vaccination_severe_effectiveness = 0.875
 const vaccination_critical_effectiveness = 0.92
 const vaccination_mild_effectiveness = 0.33
@@ -93,9 +82,11 @@ end
     dist_mild_recovery,
     dist_severe_recovery,
     dist_death_time,
-    severity_dists_ages
+    severity_dists_ages,
+    age_vaccination_thresholds,
+    vaccination_uptakes_probs_age
   )
-
+  @assert length(vaccination_uptakes_probs_age) == length(age_vaccination_thresholds)
   vaccine_prob = vaccination_uptakes_probs_age[agegroup(age_vaccination_thresholds, age)]
   vaccinated = rand(rng) < vaccine_prob
 
@@ -168,7 +159,9 @@ function resample!(
   dist_mild_recovery_time,
   dist_severe_recovery_time,
   dist_death_time,
-  severity_dists_ages)
+  severity_dists_ages,
+  age_vaccination_thresholds,
+  vaccination_uptakes_probs_age)
 
   for i in 1:length(ages) # ages is +1 as we have older population now
     progressions[i] = sample_progression(rng, ages[i] + 1, genders[i],
@@ -178,7 +171,9 @@ function resample!(
       dist_mild_recovery_time,
       dist_severe_recovery_time,
       dist_death_time,
-      severity_dists_ages)
+      severity_dists_ages,
+      age_vaccination_thresholds,
+      vaccination_uptakes_probs_age)
   end
   progressions
 end

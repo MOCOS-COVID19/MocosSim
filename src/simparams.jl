@@ -53,6 +53,9 @@ struct SimParams <: AbstractSimParams
   infection_modulation_function::Union{Nothing,InfectionModulation}
   screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
+
+  age_vaccination_thresholds::Vector{Int}
+  vaccination_uptakes_probs_age::Vector{Float32}
 end
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
@@ -78,6 +81,8 @@ function load_params(rng=MersenneTwister(0);
         population::DataFrame,
         infection_modulation_name::Union{Nothing,AbstractString}=nothing,
         infection_modulation_params::NamedTuple=NamedTuple{}(),
+        age_vaccination_thresholds::Vector{Int},
+        vaccination_uptakes_probs_age::Vector{Float32},
         kwargs...
         )
 
@@ -101,7 +106,9 @@ function load_params(rng=MersenneTwister(0);
     dist_mild_recovery_time,
     dist_severe_recovery_time,
     dist_death_time,
-    severity_dists_ages
+    severity_dists_ages,
+    age_vaccination_thresholds,
+    vaccination_uptakes_probs_age
   )
 
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
@@ -158,6 +165,9 @@ function make_params(
   age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
   age_coupling_use_genders::Bool=false,
   age_coupling_param::Union{Nothing, Real}=nothing,
+
+  age_vaccination_thresholds::Vector{Int} = Int[0, 12, 18, 60],
+  vaccination_uptakes_probs_age::Vector{Float32} = Float32[0.0, 0.36, 0.62, 0.80]
 )
   sort!(individuals_df, :household_index)
 
@@ -241,7 +251,10 @@ function make_params(
     phone_tracing_params,
     infection_modulation_function,
     screening_params,
-    spreading_params
+    spreading_params,
+    age_vaccination_thresholds,
+    vaccination_uptakes_probs_age
+    
   )
   params
 end
