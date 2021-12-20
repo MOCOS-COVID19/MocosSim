@@ -34,7 +34,7 @@ const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
 const vaccination_severe_effectiveness = 0.875
 const vaccination_critical_effectiveness = 0.92
-const vaccination_mild_effectiveness = 0.33
+const vaccination_mild_effectiveness = 0.75
 #[0, 0.6, 0.85, 0.85] # Asymptomatic=1 Mild Severe Critical
 function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages, vaccinated::Bool)
   if age < 0
