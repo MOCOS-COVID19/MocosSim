@@ -81,11 +81,15 @@ end
     dist_death_time,
     severity_dists_ages,
     age_vaccination_thresholds,
-    vaccination_uptakes_probs_age
+    vaccination_uptakes_probs_age,
+    booster_probs_age
   )
   @assert length(vaccination_uptakes_probs_age) == length(age_vaccination_thresholds)
   vaccine_prob = vaccination_uptakes_probs_age[agegroup(age_vaccination_thresholds, age)]
-  vaccinated = rand(rng) < vaccine_prob
+  @assert length(booster_probs_age) == length(age_vaccination_thresholds)
+  booster_prob = booster_probs_age[agegroup(age_vaccination_thresholds, age)]
+  
+  vaccinated = rand(rng) < vaccine_prob * booster_prob
 
   severity = sample_severity(rng, age, gender, severity_dists_ages, vaccinated)
 
@@ -159,7 +163,9 @@ function resample!(
   dist_death_time,
   severity_dists_ages,
   age_vaccination_thresholds,
-  vaccination_uptakes_probs_age)
+  vaccination_uptakes_probs_age,
+  booster_probs_age,
+  )
 
   for i in 1:length(ages) # ages is +1 as we have older population now
     progressions[i] = sample_progression(rng, ages[i] + 1, genders[i], ifr,
@@ -171,7 +177,8 @@ function resample!(
       dist_death_time,
       severity_dists_ages,
       age_vaccination_thresholds,
-      vaccination_uptakes_probs_age)
+      vaccination_uptakes_probs_age,
+      booster_probs_age)
   end
   progressions
 end
