@@ -35,8 +35,12 @@ const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 const vaccination_severe_effectiveness = 0.875
 const vaccination_critical_effectiveness = 0.92
 const vaccination_mild_effectiveness = 0.33
+const booster_severe_effectiveness = 0.875
+const booster_critical_effectiveness = 0.92
+const booster_mild_effectiveness = 0.80
+
 #[0, 0.6, 0.85, 0.85] # Asymptomatic=1 Mild Severe Critical
-function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages, vaccinated::Bool)
+function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages, vaccinated::Bool, is_booster::Bool)
   if age < 0
     error("age should be non-negative")
   end
@@ -48,13 +52,21 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dis
   dist = severity_dists_ages[idx][age < max_age_hosp ? age + 1 : max_age_hosp]
   severity_int = rand(rng, dist)
   severity = rand(rng, dist) |> Severity
-  if (severity==Critical) && vaccinated && rand(rng) < vaccination_critical_effectiveness
+  critical_effectiveness = vaccination_critical_effectiveness
+  severe_effectiveness = vaccination_severe_effectiveness
+  mild_effectiveness = vaccination_mild_effectiveness
+  if is_booster
+    critical_effectiveness = booster_critical_effectiveness
+    severe_effectiveness = booster_severe_effectiveness
+    mild_effectiveness = booster_mild_effectiveness
+  end
+  if (severity==Critical) && vaccinated && rand(rng) < critical_effectiveness
     severity = Severe
   end
-  if (severity==Severe) && vaccinated && rand(rng) < vaccination_severe_effectiveness
+  if (severity==Severe) && vaccinated && rand(rng) < severe_effectiveness
     severity = Mild
   end
-  if (severity==Mild) && vaccinated && rand(rng) < vaccination_mild_effectiveness
+  if (severity==Mild) && vaccinated && rand(rng) < mild_effectiveness
     severity = Asymptomatic
   end
   severity
@@ -89,9 +101,9 @@ end
   @assert length(booster_probs_age) == length(age_vaccination_thresholds)
   booster_prob = booster_probs_age[agegroup(age_vaccination_thresholds, age)]
   
-  vaccinated = rand(rng) < vaccine_prob * booster_prob
-
-  severity = sample_severity(rng, age, gender, severity_dists_ages, vaccinated)
+  vaccinated = rand(rng) < vaccine_prob
+  is_booster = vaccinated && (rand(rng) < booster_prob)
+  severity = sample_severity(rng, age, gender, severity_dists_ages, vaccinated, is_booster)
 
   mild_symptoms_time = missing
   severe_symptoms_time = missing
