@@ -53,10 +53,6 @@ struct SimParams <: AbstractSimParams
   infection_modulation_function::Union{Nothing,InfectionModulation}
   screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
-
-  age_vaccination_thresholds::Vector{Int}
-  vaccination_uptakes_probs_age::Vector{Float32}
-  booster_probs_age::Vector{Float32}
 end
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
@@ -168,11 +164,7 @@ function make_params(
   age_coupling_thresholds::Union{Nothing, AbstractArray{T} where T<:Real}=nothing,
   age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
   age_coupling_use_genders::Bool=false,
-  age_coupling_param::Union{Nothing, Real}=nothing,
-
-  age_vaccination_thresholds::Vector{Int} = Int[0, 12, 18, 60],
-  vaccination_uptakes_probs_age::Vector{Float32} = Float32[0.0, 0.36, 0.62, 0.80],
-  booster_probs_age::Vector{Float32} = Float32[0.0, 1.0, 1.0, 1.0]
+  age_coupling_param::Union{Nothing, Real}=nothing
 )
   sort!(individuals_df, :household_index)
 
@@ -256,11 +248,7 @@ function make_params(
     phone_tracing_params,
     infection_modulation_function,
     screening_params,
-    spreading_params,
-    age_vaccination_thresholds,
-    vaccination_uptakes_probs_age,
-    booster_probs_age
-    
+    spreading_params
   )
   params
 end
