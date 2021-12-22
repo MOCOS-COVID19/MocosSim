@@ -172,7 +172,7 @@ function make_params(
 
   age_vaccination_thresholds::Vector{Int} = Int[0, 12, 18, 60],
   vaccination_uptakes_probs_age::Vector{Float32} = Float32[0.0, 0.36, 0.62, 0.80],
-  booster_probs_age::Vector{Float32} = Float32[0.0, 1.0, 1.0, 1.0],
+  booster_probs_age::Vector{Float32} = Float32[0.0, 1.0, 1.0, 1.0]
 )
   sort!(individuals_df, :household_index)
 
