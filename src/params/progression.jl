@@ -32,15 +32,8 @@ const death_probs_age = [0.6666666666666666, 0.5945945945945946, 0.7538461538461
 const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_probs)
 const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
-const vaccination_severe_effectiveness = 0.875
-const vaccination_critical_effectiveness = 0.92
-const vaccination_mild_effectiveness = 0.33
-const booster_severe_effectiveness = 0.875
-const booster_critical_effectiveness = 0.92
-const booster_mild_effectiveness = 0.80
-
 #[0, 0.6, 0.85, 0.85] # Asymptomatic=1 Mild Severe Critical
-function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages, vaccinated::Bool, is_booster::Bool)
+function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dists_ages, vaccinated::Bool, is_booster::Bool, previously_infected::Bool, vaccination_effectiveness, booster_effectiveness, previously_infected_effectiveness)
   if age < 0
     error("age should be non-negative")
   end
@@ -51,23 +44,28 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dis
   #dist = Categorical([0,  1.0 - prob,  prob *(1-critical_probs[group_ids]) ,  prob *critical_probs[group_ids]])
   dist = severity_dists_ages[idx][age < max_age_hosp ? age + 1 : max_age_hosp]
   severity_int = rand(rng, dist)
-  severity = rand(rng, dist) |> Severity
-  critical_effectiveness = vaccination_critical_effectiveness
-  severe_effectiveness = vaccination_severe_effectiveness
-  mild_effectiveness = vaccination_mild_effectiveness
-  if is_booster
-    critical_effectiveness = booster_critical_effectiveness
-    severe_effectiveness = booster_severe_effectiveness
-    mild_effectiveness = booster_mild_effectiveness
-  end
-  if (severity==Critical) && vaccinated && rand(rng) < critical_effectiveness
-    severity = Severe
-  end
-  if (severity==Severe) && vaccinated && rand(rng) < severe_effectiveness
-    severity = Mild
-  end
-  if (severity==Mild) && vaccinated && rand(rng) < mild_effectiveness
-    severity = Asymptomatic
+  severity = severity_int |> Severity
+
+  if vaccinated || previously_infected
+    effectiveness = vaccination_effectiveness
+    if is_booster
+      effectiveness = booster_effectiveness 
+    end
+    if previously_infected && !vaccinated
+      effectiveness = previously_infected_effectiveness
+    end  
+    if (severity==Critical) && vaccinated && rand(rng) < effectiveness[severity_int]
+      severity = Severe
+      severity_int = severity |> UInt8
+    end
+    if (severity==Severe) && vaccinated && rand(rng) < effectiveness[severity_int]
+      severity = Mild
+      severity_int = severity |> UInt8
+    end
+    if (severity==Mild) && vaccinated && rand(rng) < effectiveness[severity_int]
+      severity = Asymptomatic
+      severity_int = severity |> UInt8
+    end
   end
   severity
 end
@@ -94,7 +92,11 @@ end
     severity_dists_ages,
     age_vaccination_thresholds,
     vaccination_uptakes_probs_age,
-    booster_probs_age
+    booster_probs_age,
+    vaccination_effectiveness,
+    booster_effectiveness,
+    previously_infected_effectiveness,
+    previously_infected_prob
   )
   @assert length(vaccination_uptakes_probs_age) == length(age_vaccination_thresholds)
   vaccine_prob = vaccination_uptakes_probs_age[agegroup(age_vaccination_thresholds, age)]
@@ -103,7 +105,8 @@ end
   
   vaccinated = rand(rng) < vaccine_prob
   is_booster = vaccinated && (rand(rng) < booster_prob)
-  severity = sample_severity(rng, age, gender, severity_dists_ages, vaccinated, is_booster)
+  previously_infected = rand(rng) < previously_infected_prob
+  severity = sample_severity(rng, age, gender, severity_dists_ages, vaccinated, is_booster, previously_infected, vaccination_effectiveness, booster_effectiveness, previously_infected_effectiveness)
 
   mild_symptoms_time = missing
   severe_symptoms_time = missing
@@ -177,6 +180,10 @@ function resample!(
   age_vaccination_thresholds,
   vaccination_uptakes_probs_age,
   booster_probs_age,
+  vaccination_effectiveness,
+  booster_effectiveness,
+  previously_infected_effectiveness,
+  previously_infected_prob
   )
 
   for i in 1:length(ages) # ages is +1 as we have older population now
@@ -190,7 +197,11 @@ function resample!(
       severity_dists_ages,
       age_vaccination_thresholds,
       vaccination_uptakes_probs_age,
-      booster_probs_age)
+      booster_probs_age,
+      vaccination_effectiveness,
+      booster_effectiveness,
+      previously_infected_effectiveness,
+      previously_infected_prob)
   end
   progressions
 end

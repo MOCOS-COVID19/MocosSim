@@ -46,7 +46,11 @@ rng = Random.MersenneTwister(0);
   age_vaccination_thresholds = Int[0, 12, 18, 60],
   vaccination_uptakes_probs_age = Float32[0.0, 0.36, 0.62, 0.80],
   booster_probs_age = Float32[0.0, 1.0, 1.0, 1.0],
-  ifr = 1.0
+  ifr = 1.0,
+  vaccination_effectiveness = Float32[0.0, 0.33, 0.875, 0.92],
+  booster_effectiveness = Float32[0.0, 0.80, 0.875, 0.92],
+  previously_infected_effectiveness =  Float32[0.0, 0.80, 0.875, 0.92],
+  previously_infected_prob = 0.1
 );
 
 mutable struct Callback

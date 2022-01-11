@@ -82,6 +82,10 @@ function load_params(rng=MersenneTwister(0);
         vaccination_uptakes_probs_age::Vector{Float32},
         booster_probs_age::Vector{Float32},
         ifr::Real,
+        vaccination_effectiveness::Vector{Float32},
+        booster_effectiveness::Vector{Float32},
+        previously_infected_effectiveness::Vector{Float32},
+        previously_infected_prob::Real,
         kwargs...
         )
 
@@ -108,7 +112,11 @@ function load_params(rng=MersenneTwister(0);
     severity_dists_ages,
     age_vaccination_thresholds,
     vaccination_uptakes_probs_age,
-    booster_probs_age
+    booster_probs_age,
+    vaccination_effectiveness,
+    booster_effectiveness,
+    previously_infected_effectiveness,
+    previously_infected_prob
   )
 
   infection_modulation_function = isnothing(infection_modulation_name) ? nothing : make_infection_modulation(infection_modulation_name; infection_modulation_params...)
