@@ -139,7 +139,7 @@ end
   else
     if (severity==Mild)
       recovery_time = mild_symptoms_time + rand(rng, dist_mild_recovery)
-    elseif vaccinated  # && (severity==Asymptomatic)
+    elseif vaccinated || previously_infected # && (severity==Asymptomatic)
       recovery_time = incubation_time
     else # now only asymptomatic, but not vaccinated
       recovery_time = rand(rng, dist_mild_recovery)
