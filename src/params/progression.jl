@@ -45,24 +45,29 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, severity_dis
   dist = severity_dists_ages[idx][age < max_age_hosp ? age + 1 : max_age_hosp]
   severity_int = rand(rng, dist)
   severity = severity_int |> Severity
-
+  unit_vector = Float32[1.0, 1.0, 1.0, 1.0]
   if vaccinated || previously_infected
     effectiveness = vaccination_effectiveness
     if is_booster
-      effectiveness = booster_effectiveness 
+      effectiveness = booster_effectiveness
     end
     if previously_infected && !vaccinated
       effectiveness = previously_infected_effectiveness
-    end  
-    if (severity==Critical) && vaccinated && rand(rng) < effectiveness[severity_int]
+    end
+    if previously_infected && is_booster
+      effectiveness = unit_vector - (unit_vector - previously_infected_effectiveness) .* (unit_vector - booster_effectiveness)
+    elseif previously_infected && vaccinated
+      effectiveness = unit_vector - (unit_vector - previously_infected_effectiveness) .* (unit_vector - vaccination_effectiveness)
+    end
+    if (severity==Critical) && rand(rng) < effectiveness[severity_int]
       severity = Severe
       severity_int = severity |> UInt8
     end
-    if (severity==Severe) && vaccinated && rand(rng) < effectiveness[severity_int]
+    if (severity==Severe) && rand(rng) < effectiveness[severity_int]
       severity = Mild
       severity_int = severity |> UInt8
     end
-    if (severity==Mild) && vaccinated && rand(rng) < effectiveness[severity_int]
+    if (severity==Mild) && rand(rng) < effectiveness[severity_int]
       severity = Asymptomatic
       severity_int = severity |> UInt8
     end
@@ -130,7 +135,7 @@ end
     if (severity==Critical)
       critical_symptoms_time = severe_symptoms_time
     end
-    recovery_time = severe_symptoms_time + asample(hospitalization_time_sampler, rng)
+    recovery_time = severe_symptoms_time + 0.5 * asample(hospitalization_time_sampler, rng)
   else
     if (severity==Mild)
       recovery_time = mild_symptoms_time + rand(rng, dist_mild_recovery)

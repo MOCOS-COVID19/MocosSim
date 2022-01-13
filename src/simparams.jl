@@ -93,7 +93,8 @@ function load_params(rng=MersenneTwister(0);
 
   num_individuals = individuals_df |> nrow
 
-  dist_incubation_time = LogNormal(1.3669786931887833, 0.5045104580676582) # accurate
+  # dist_incubation_time = LogNormal(1.3669786931887833, 0.5045104580676582) # accurate
+  dist_incubation_time = LogNormal(1.23028082387, 0.47862064526) # omicron
   dist_symptom_onset_time = Gamma(0.8738003969079596, 2.9148873266517685) # not have data
   dist_hospitalization_time = Exponential(3.78) # Gamma(1.1765988120148885, 2.6664347368236787)
   dist_mild_recovery_time = Uniform(11, 17) #not sure if we need to change it
