@@ -85,7 +85,7 @@ function load_params(rng=MersenneTwister(0);
         vaccination_effectiveness::Vector{Float32},
         booster_effectiveness::Vector{Float32},
         previously_infected_effectiveness::Vector{Float32},
-        previously_infected_prob::Real,
+        previously_infected_prob::Vector{Float32},
         kwargs...
         )
 

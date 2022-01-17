@@ -110,7 +110,7 @@ end
   
   vaccinated = rand(rng) < vaccine_prob
   is_booster = vaccinated && (rand(rng) < booster_prob)
-  previously_infected = rand(rng) < previously_infected_prob
+  previously_infected = rand(rng) < previously_infected_prob[agegroup(age_vaccination_thresholds,age)]
   severity = sample_severity(rng, age, gender, severity_dists_ages, vaccinated, is_booster, previously_infected, vaccination_effectiveness, booster_effectiveness, previously_infected_effectiveness)
 
   mild_symptoms_time = missing

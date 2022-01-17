@@ -50,7 +50,7 @@ rng = Random.MersenneTwister(0);
   vaccination_effectiveness = Float32[0.0, 0.33, 0.875, 0.92],
   booster_effectiveness = Float32[0.0, 0.80, 0.875, 0.92],
   previously_infected_effectiveness =  Float32[0.0, 0.80, 0.875, 0.92],
-  previously_infected_prob = 0.1
+  previously_infected_prob = Float32[0.24, 0.24, 0.24, 0.24]
 );
 
 mutable struct Callback
