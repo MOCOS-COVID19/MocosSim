@@ -1,20 +1,28 @@
-const StrainImmunityTable = SMatrix{NUM_IMMUNITIES, NUM_STRAINS, Float64, NUM_IMMUNITIES*NUM_STRAINS }
 
-function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::Real=1.70, delta_multiplier::Real=1.7*1.5, omicron_multiplier::Real=1.7*1.5*2.0)::StrainImmunityTable
+const StrainInfectivityTable = SVector{NUM_STRAINS, Float64}
+const StrainSusceptibilityTable = SMatrix{NUM_IMMUNITIES, NUM_STRAINS, Float64, NUM_IMMUNITIES*NUM_STRAINS }
+
+function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::Real=1.70, delta_multiplier::Real=1.7*1.5, omicron_multiplier::Real=1.7*1.5*2.0)::StrainInfectivityTable
   # needs validation with real data
+  immunity = StrainInfectivityTable(base_multiplier, british_multiplier, delta_multiplier, omicron_multiplier)
+  @assert all( 0 .<= immunity )
+  immunity
+end
 
+function make_susceptibility_table()
   #each column is distinct StrainKind
   #each row is distinct ImmunityState
-  mat = @SMatrix [
-    1.00    1.70    2.55    5.10;
-    0.01    0.01    0.10    0.60;
-    0.10    0.10    0.50    0.75;
-    0.03    0.10    0.30    0.75;
+
+  table = @SMatrix [
+    #ChineseStrain  BritishStrain DeltaStrain OmicronStrain
+    1.00            1.00          1.00        1.00;         # NoImmunity
+    0.01            0.01          0.10        0.60;         # NaturalImmunity
+    0.10            0.10          0.50        0.75;         # VecVacImmunity
+    0.03            0.10          0.30        0.75;         # MRNAVacImmunity
   ]
 
-  @assert all( mat .>= 0)
-  @assert maximum(mat, dims=1) |> vec == mat[1,:]
-  mat
+  @assert all( 0 .<= table .<= 1)
+  table
 end
 
 struct ImmunizationOrder
@@ -23,8 +31,8 @@ struct ImmunizationOrder
   immunity_kinds::Vector{ImmunityState}
 end
 
-rawinfectivity(table::StrainImmunityTable, strain::StrainKind) = table[UInt(1), UInt(strain)]
-condinfectivity(table::StrainImmunityTable, immunity::ImmunityState, strain::StrainKind) = table[UInt(immunity), UInt(strain)] / table[UInt(1), UInt(strain)]
+straininfectivity(table::StrainInfectivityTable, strain::StrainKind) = table[UInt(strain)]
+susceptibility(table::StrainSusceptibilityTable, immunity::ImmunityState, strain::StrainKind) = table[UInt(immunity), UInt(strain)]
 
 function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bool)::Nothing
   @info "Immunizing"
