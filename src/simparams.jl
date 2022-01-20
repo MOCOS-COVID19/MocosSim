@@ -86,6 +86,8 @@ function load_params(rng=MersenneTwister(0);
         booster_effectiveness::Vector{Float32},
         previously_infected_effectiveness::Vector{Float32},
         previously_infected_prob::Vector{Float32},
+        hospitalization_multiplier::Float64 = 0.33, 
+        death_multiplier::Float64=1.8,
         kwargs...
         )
 
@@ -100,7 +102,7 @@ function load_params(rng=MersenneTwister(0);
   dist_mild_recovery_time = Uniform(11, 17) #not sure if we need to change it
   dist_severe_recovery_time = Uniform(4*7, 8*7) # not used
   dist_death_time = LogNormal(1.6968381137317683, 1.2051253249941534)
-  severity_dists_ages = make_severity_dists_ages(hospitalization_men_probs, hospitalization_women_probs)
+  severity_dists_ages = make_severity_dists_ages(hospitalization_men_probs, hospitalization_women_probs, critical_probs, hospitalization_multiplier, death_multiplier)
 
   progressions = Vector{Progression}(undef, num_individuals);
   resample!(rng, progressions, individuals_df.age, individuals_df.gender, ifr,
