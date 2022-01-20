@@ -53,6 +53,7 @@ rng = Random.MersenneTwister(0);
   previously_infected_prob = Float32[0.24, 0.24, 0.24, 0.24],
   hospitalization_multiplier = 0.33, 
   death_multiplier=1.8,
+  hospitalization_time_ratio = 1.0
 );
 
 mutable struct Callback

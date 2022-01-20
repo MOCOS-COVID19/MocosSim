@@ -87,7 +87,7 @@ function sample_if_death(rng::AbstractRNG, severity::Severity, age::Real, ifr::R
   rand(rng) < death_prob
 end
 
-@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, ifr::Real,
+@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, ifr::Real, hospitalization_time_ratio::Real,
     dist_incubation,
     dist_symptom_onset,
     dist_hospitalization,
@@ -135,7 +135,7 @@ end
     if (severity==Critical)
       critical_symptoms_time = severe_symptoms_time
     end
-    recovery_time = severe_symptoms_time + 0.5 * asample(hospitalization_time_sampler, rng)
+    recovery_time = severe_symptoms_time + hospitalization_time_ratio * asample(hospitalization_time_sampler, rng)
   else
     if (severity==Mild)
       recovery_time = mild_symptoms_time + rand(rng, dist_mild_recovery)
@@ -175,6 +175,7 @@ function resample!(
   progressions, ages::AbstractVector{T} where T <: Real,
   genders::AbstractVector{Bool},
   ifr::Real,
+  hospitalization_time_ratio::Real,
   dist_incubation_time,
   dist_symptom_onset_time,
   dist_hospitalization_time,
@@ -192,7 +193,7 @@ function resample!(
   )
 
   for i in 1:length(ages) # ages is +1 as we have older population now
-    progressions[i] = sample_progression(rng, ages[i] + 1, genders[i], ifr,
+    progressions[i] = sample_progression(rng, ages[i] + 1, genders[i], ifr, hospitalization_time_ratio,
       dist_incubation_time,
       dist_symptom_onset_time,
       dist_hospitalization_time,

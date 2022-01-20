@@ -88,6 +88,7 @@ function load_params(rng=MersenneTwister(0);
         previously_infected_prob::Vector{Float32},
         hospitalization_multiplier::Float64 = 0.33, 
         death_multiplier::Float64=1.8,
+        hospitalization_time_ratio::Float64= 1.0,
         kwargs...
         )
 
@@ -105,7 +106,7 @@ function load_params(rng=MersenneTwister(0);
   severity_dists_ages = make_severity_dists_ages(hospitalization_men_probs, hospitalization_women_probs, critical_probs, hospitalization_multiplier, death_multiplier)
 
   progressions = Vector{Progression}(undef, num_individuals);
-  resample!(rng, progressions, individuals_df.age, individuals_df.gender, ifr,
+  resample!(rng, progressions, individuals_df.age, individuals_df.gender, ifr, hospitalization_time_ratio,
     dist_incubation_time,
     dist_symptom_onset_time,
     dist_hospitalization_time,
