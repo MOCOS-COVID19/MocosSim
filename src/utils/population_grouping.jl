@@ -37,5 +37,6 @@ PopulationGrouping(group_ids, num_groups::Integer, PersonIdx::DataType=UInt32) =
 
 numgroups(g::PopulationGrouping) = length(g.group_ptrs) - 1
 getgroup(g::PopulationGrouping, group_id::Integer) = @view g.person_ids[g.group_ptrs[group_id]:(g.group_ptrs[group_id+1]-1)]
+groupsize(g::PopulationGrouping, group_id::Integer) = g.group_ptrs[group_id+1] - g.group_ptrs[group_id]
 groupsizes!(sizes::AbstractVector{T} where T<:Integer, g::PopulationGrouping) = (sizes .= (@view g.group_ptrs[2:end]) .- (@view g.group_ptrs[1:end-1]))
 groupsizes(g::PopulationGrouping) = groupsizes!(Vector{PersonIdx}(undef, numgroups(g)), g)

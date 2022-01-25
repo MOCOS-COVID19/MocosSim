@@ -4,15 +4,21 @@ struct CouplingSampler{Tprob<:Real, PersonIdx<:Integer, GroupIdx<:Integer}
   matrix_sampler::MatrixAliasSampler{GroupIdx, Float64}
 end
 
-function CouplingSampler(group_ids::AbstractVector{GroupIdx}, coupling_weights::Matrix{T} where T<:Real, PersonIdx::DataType=UInt32) where GroupIdx<:Integer
+function couplingsizecheck(group_ids::AbstractVector{GroupIdx}, coupling_weights::AbstractMatrix{T} where T<:Real) where GroupIdx<:Integer
   num_groups, M = size(coupling_weights)
   @assert num_groups == M
 
-  @assert maximum(group_ids) <= num_groups <= typemax(GroupIdx)
-  @assert minimum(group_ids) > 0
+  ming, maxg = extrema(group_ids)
+  @assert ming > 0
+  @assert maxg <= num_groups <= typemax(GroupIdx)
+  minp, maxp = extrema(coupling_weights)
+  @assert minp >= 0
+  @assert maxp < Inf
+  num_groups
+end
 
-  @assert maximum(coupling_weights) < Inf
-  @assert minimum(coupling_weights) >= 0
+function CouplingSampler(group_ids::AbstractVector{GroupIdx}, coupling_weights::AbstractMatrix{T} where T<:Real, PersonIdx::DataType=UInt32) where GroupIdx<:Integer
+  num_groups = couplingsizecheck(group_ids, coupling_weights)
 
   grouping = PopulationGrouping(group_ids, num_groups, PersonIdx)
   matrix_sampler = MatrixAliasSampler(coupling_weights, GroupIdx)
