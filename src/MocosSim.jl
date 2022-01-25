@@ -72,4 +72,6 @@ function simulate!(state::SimState, params::SimParams, callback)
   nothing
 end
 
+precompile(simulate!, (SimState, SimParams))
+
 end #module
