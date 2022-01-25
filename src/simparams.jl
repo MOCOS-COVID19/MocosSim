@@ -31,7 +31,8 @@ struct SimParams <: AbstractSimParams
   immunity_rand::Vector{ImmunityRand}
 
   progression_params::ProgressionParams
-  strain_immunity_table::StrainImmunityTable
+  strain_infectivity_table::StrainInfectivityTable
+  strain_susceptibility_table::StrainSusceptibilityTable
 
   constant_kernel_param::Float32
   household_kernel_param::Float32
@@ -63,10 +64,12 @@ struct SimParams <: AbstractSimParams
 end
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
-rawinfectivity(params::SimParams, strain::StrainKind) = rawinfectivity(params.strain_immunity_table, strain)
-condinfectivity(params::SimParams, immunity::ImmunityState, strain::StrainKind) = condinfectivity(params.strain_immunity_table, immunity, strain)
 
-condisimmune(params::SimParams, subject_id::Integer, immunity::ImmunityState, strain::StrainKind) = params.immunity_rand[subject_id] >= condinfectivity(params, immunity, strain)
+straininfectivity(params::SimParams, strain::StrainKind) = straininfectivity(params.strain_infectivity_table, strain)
+susceptibility(params::SimParams, immunity::ImmunityState, strain::StrainKind) = susceptibility(params.strain_susceptibility_table, immunity, strain)
+
+issusceptible(params::SimParams, subject_id::Integer, immunity::ImmunityState, strain::StrainKind) = params.immunity_rand[subject_id] < susceptibility(params, immunity, strain)
+isimmune(params::SimParams, subject_id::Integer, immunity::ImmunityState, strain::StrainKind) = !issusceptible(params, subject_id, immunity, strain)
 
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
 age(params::SimParams, person_id::Integer) = params.ages[person_id]
@@ -185,7 +188,8 @@ function make_params(
 
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
-  strain_immunity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier,omicron_multiplier=omicron_strain_multiplier)
+  strain_infectivity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier,omicron_multiplier=omicron_strain_multiplier)
+  strain_susceptibility_table = make_susceptibility_table()
 
   age_coupling_kernel_params =
     if nothing === age_coupling_weights && nothing === age_coupling_thresholds && nothing === age_coupling_param; nothing
@@ -237,7 +241,8 @@ function make_params(
     reinterpret(ImmunityRand, rand(rng, UInt32, num_individuals)),
 
     progression_params,
-    strain_immunity_table,
+    strain_infectivity_table,
+    strain_susceptibility_table,
 
     constant_kernel_param,
     household_kernel_param,
