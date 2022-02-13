@@ -9,20 +9,20 @@ function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::
   immunity
 end
 
-function make_susceptibility_table()
+function make_susceptibility_table(;omicron_susceptibility::Vector{T}) where T <: Real
   #each column is distinct StrainKind
   #each row is distinct ImmunityState
 
   table = @SMatrix [
-    #ChineseStrain  BritishStrain DeltaStrain OmicronStrain
-    1.00   1.00   1.00   1.00;
-    0.01   0.01   0.10   0.40;
-    0.10   0.10   0.48   0.67;
-    0.10   0.10   0.48   0.267;
-    0.03   0.10   0.30   0.30;
-    0.03   0.10   0.30   0.12;
+    #ChineseStrain  BritishStrain DeltaStrain
+    1.00   1.00   1.00;
+    0.01   0.01   0.10;
+    0.10   0.10   0.48;
+    0.10   0.10   0.48;
+    0.03   0.10   0.30;
+    0.03   0.10   0.30;
   ]
-
+  table = hcat(table, omicron_susceptibility)
   @assert all( 0 .<= table .<= 1)
   table
 end
