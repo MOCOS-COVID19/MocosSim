@@ -182,6 +182,7 @@ function make_params(
   british_strain_multiplier::Real=1.70,
   delta_strain_multiplier::Real=1.7*1.5,
   omicron_strain_multiplier::Real=1.7*1.5*2.0,
+  delta_strain_susceptibility::Vector{T} where T<:Real=[1.0, 0.10, 0.48, 0.48, 0.30, 0.30],
   omicron_strain_susceptibility::Vector{T} where T<:Real=[1.0, 0.7, 1.0, 0.5, 0.5, 0.5],
 
   hospital_kernel_param::Float64=0.0,
@@ -195,7 +196,7 @@ function make_params(
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
   strain_infectivity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier,omicron_multiplier=omicron_strain_multiplier)
-  strain_susceptibility_table = make_susceptibility_table(omicron_susceptibility=omicron_strain_susceptibility)
+  strain_susceptibility_table = make_susceptibility_table(delta_susceptibility=delta_strain_susceptibility, omicron_susceptibility=omicron_strain_susceptibility)
 
   age_coupling_kernel_params =
     if nothing === age_coupling_weights && nothing === age_coupling_thresholds && nothing === age_coupling_param; nothing
