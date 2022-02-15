@@ -44,8 +44,8 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::Im
   @assert age >= 0 "age should be non-negative"
   gender_int = gender + 1 |> UInt8
   dist = dist_severity_by_age[min(age + 1, max_age_hosp), gender_int]
-  severity = asample(dist) |> Severity
-  severity_int = severity |> UInt8
+  severity_int = asample(dist, rng)
+  severity = severity_int |> Severity
   #reduction severity for immunited subject with some probability
   if size(effectiveness_table,1) > 1
     @assert size(effectiveness_table,1) == 6
