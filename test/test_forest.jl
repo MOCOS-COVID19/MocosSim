@@ -19,6 +19,9 @@ include("/mnt/data_sata/jacek/repo/mocos/MocosSim/src/robin_forest.jl")
 
         f = RobinForest(10)
 
+        e = Event(Val(TransmissionEvent), time=0.0, subject=2, source=1, contact_kind=NoContact, strain=NullStrain)
+
+        push!(f, e)
         @test 2 + 2 == 4
 
     end
