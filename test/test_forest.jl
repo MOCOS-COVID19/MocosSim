@@ -19,6 +19,23 @@ function trans(; src, subject)
 end
 
 @testset "ForestTesting" begin
+    @testset "Small Tree" begin
+        f = RobinForest(10)
+        push!(f, trans(src=1, subject=2))
+        push!(f, trans(src=2, subject=3))
+        push!(f, trans(src=2, subject=4))
+        @test 2 + 2 == 4
+
+        println("backwardinfection $(backwardinfection(f, 2) )")
+        println("backwardinfection subject $(  subject(backwardinfection(f, 2)) )")
+        println("backwardinfection source $(  source(backwardinfection(f, 2)) )")
+
+        for x in forwardinfections(f, 2)
+            println("forwardinfections -> $x")
+        end
+
+    end
+
     @testset "ForestForward" begin
 
         f = RobinForest(10)
