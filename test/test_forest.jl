@@ -42,7 +42,7 @@ end
             println("inedges -> $x")
         end
 
-        infected_per_day = count_infected_per_day(f, 3)
+        infected_per_day = count_infected_per_time(f, 3)
         println("infected_per_day = $infected_per_day")
 
     end
