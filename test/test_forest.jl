@@ -10,9 +10,9 @@ using DataStructures
 using FixedPointNumbers
 const PersonIdx=UInt32
 const TimePoint = Fixed{Int32, 16}
-include("/mnt/data_sata/jacek/repo/mocos/MocosSim/src/enums.jl")
-include("/mnt/data_sata/jacek/repo/mocos/MocosSim/src/event.jl")
-include("/mnt/data_sata/jacek/repo/mocos/MocosSim/src/robin_forest.jl")
+include("../src/enums.jl")
+include("../src/event.jl")
+include("../src/robin_forest.jl")
 
 function trans(; src, subject, t=0.0)
     return Event(Val(TransmissionEvent), time=t, subject=subject, source=src, contact_kind=NoContact, strain=NullStrain)
@@ -44,6 +44,10 @@ end
 
         infected_per_day = count_infected_per_time(f, 3)
         println("infected_per_day = $infected_per_day")
+
+
+        r_per_time = count_r_per_time(f, 3)
+        println("infected_per_day = $r_per_time")
 
     end
 
