@@ -137,6 +137,7 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
   progression = progressionof(state, subject_id)
 
   severity = progression.severity
+  setstrain!(state, subject_id, event.strain)
 
   infected_time = time(event) - progression.incubation_time
   if Asymptomatic == severity
