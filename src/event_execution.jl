@@ -68,7 +68,7 @@ function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimPara
 
   incubation_time = progression.incubation_time
   @assert !ismissing(incubation_time)
-  event = Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event))
+  event = Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event), event.strain)
   push!(state.queue, event)
   return true
 end
@@ -119,7 +119,7 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
   incubation_time = progression.incubation_time
   @assert !ismissing(incubation_time)
   push!(state.queue,
-    Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event))
+    Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event), event.strain)
   )
   return true
 end

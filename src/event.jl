@@ -64,6 +64,7 @@ struct Event
   Event(::Val{DetectionEvent}, time::Real, subject::Integer, detectionkind::DetectionKind) = new(time, subject, 0, DetectionEvent, UInt8(detectionkind), NullStrain)
   Event(::Val{ImmunizationEvent}, time::Real, subject::Integer, new_immunity::ImmunityState) = new(time, subject, 0, ImmunizationEvent, UInt8(new_immunity), NullStrain)
   Event(::Val{ScreeningEvent}, time::Real) = new(time, 0, 0, ScreeningEvent, 0, NullStrain)
+  Event(::Val{BecomeInfectiousEvent}, time::Real, subject::Integer, strain::StrainKind) = new(time, subject, 0, BecomeInfectiousEvent , 0, strain)
 end
 
 time(event::Event) = event.time
