@@ -61,6 +61,8 @@ struct SimParams <: AbstractSimParams
 
   screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
+
+  household_params::Union{Nothing, HouseholdParams}
 end
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
@@ -170,6 +172,7 @@ function make_params(
   age_coupling_use_genders::Bool=false,
 
   screening_params::Union{Nothing,ScreeningParams}=nothing,
+  household_params::Union{Nothing,HouseholdParams}=nothing,
 
   spreading_alpha::Union{Nothing,Real}=nothing,
   spreading_x0::Real=1,
@@ -241,6 +244,13 @@ function make_params(
     else error("spreading_alpha must be larger than 0, got $spreading_alpha")
     end
 
+  household_params =
+    if nothing === household_params; HouseholdParams()
+    elseif 0.0 <= household_params.quarantine_prob && 1.0 >= household_params.quarantine_prob && 0.0 <= household_params.trace_prob && 1.0 >= household_params.trace_prob
+      household_params
+    else error("household_params has invalid values for probas")
+    end
+
   params = SimParams(
     household_ptrs,
     individuals_df.age,
@@ -277,7 +287,8 @@ function make_params(
     backward_tracing_modulation,
 
     screening_params,
-    spreading_params
+    spreading_params,
+    household_params
   )
   params
 end
