@@ -436,7 +436,9 @@ function quarantinehousehold!(state::SimState, params::SimParams, subject_id::In
     if !include_subject && (member == subject_id)
       continue
     end
-
+    if rand(state.rng) > params.household_params.quarantine_prob
+      continue
+    end
     member_freedom = freedom(state, member)
 
     if (Hospitalized == member_freedom) || (Released == member_freedom)
@@ -450,8 +452,11 @@ end
 
 function tracehousehold!(state::SimState, params::SimParams, subject_id::Integer; trace_household_connections::Bool)
   for member in householdof(params, subject_id)
-     backtrace!(state, params, member, trace_household_connections=trace_household_connections)
-     forwardtrace!(state, params, member, trace_household_connections=trace_household_connections)
+    if rand(state.rng) > params.household_params.trace_prob
+      continue
+    end
+    backtrace!(state, params, member, trace_household_connections=trace_household_connections)
+    forwardtrace!(state, params, member, trace_household_connections=trace_household_connections)
   end
   nothing
 end

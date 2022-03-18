@@ -61,6 +61,8 @@ struct SimParams <: AbstractSimParams
 
   screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
+
+  household_params::Union{Nothing, HouseholdParams}
 end
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
@@ -170,6 +172,7 @@ function make_params(
   age_coupling_use_genders::Bool=false,
 
   screening_params::Union{Nothing,ScreeningParams}=nothing,
+  household_params::Union{Nothing,HouseholdParams}=nothing,
 
   spreading_alpha::Union{Nothing,Real}=nothing,
   spreading_x0::Real=1,
@@ -277,7 +280,8 @@ function make_params(
     backward_tracing_modulation,
 
     screening_params,
-    spreading_params
+    spreading_params,
+    household_params
   )
   params
 end
