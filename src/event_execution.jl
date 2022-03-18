@@ -355,7 +355,7 @@ function execute!(::Val{QuarantinedEvent}, state::SimState, params::SimParams, e
   end
 
   if extension(event)
-    @assert Undetected != detected(state, subject_id)
+    #@assert Undetected != detected(state, subject_id)
     setfreedom!(state, subject_id, HomeQuarantine)
   elseif Free == freedom_state
     @assert !is_already_quarantined "quarantined cannot be free, but $subject_id is"
