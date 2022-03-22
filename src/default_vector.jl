@@ -13,15 +13,19 @@ mutable struct DefaultVector{T}
     DefaultVector(defaultValue_, K) = new{K}(defaultValue_, Vector{K}(undef, 0))
 end
 
-Base.setindex!(self::DefaultVector{T}, value::T, index::Int64) where T = setindex_impl!(self, value, index)
+Base.setindex!(self::DefaultVector{T}, value::T, index::Int64) where T = _ensure_index_in_range!(self, index) do
+    self.core[index] = value
+end
 
-function setindex_impl!(self::DefaultVector{T}, value::T, index::Int64) where T
-    while index > length(self.core)
-        push!(self.core, self.defaultValue)
-        end
-        self.core[index] = value
- end
-
-Base.getindex(self::DefaultVector{T}, index::Int64) where T = self.core[index]
+Base.getindex(self::DefaultVector{T}, index::Int64) where T = _ensure_index_in_range!(self, index) do
+    self.core[index]
+end
 
 Base.convert(::Type{Vector}, self::DefaultVector{T}) where T = copy(self.core)
+
+function _ensure_index_in_range!(next_func::Function, self::DefaultVector{T}, index::Int64) where T
+    while index > length(self.core)
+        push!(self.core, self.defaultValue)
+    end
+    next_func()
+end

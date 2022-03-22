@@ -15,6 +15,10 @@ function test_default_vector()
         v[3] = 7
         @test v[2] == 1
         @test convert(Vector, v) == [5, 1, 7]
+
+        v[7] += 1
+
+        @test convert(Vector, v) == [5, 1, 7, 1, 1, 1, 2]
     end
 
     for v in [DefaultVector('c'), DefaultVector('c', typeof('c'))]
