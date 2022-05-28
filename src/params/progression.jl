@@ -6,11 +6,10 @@ struct ProgressionParams
   dist_mild_recovery_time::Uniform{Float64}
   dist_death_time::LogNormal{Float64}
   dist_severity_by_age::Matrix{AliasSampler}
-  effectiveness_table::Matrix{Float64}
   hospitalization_time_ratio::Float64
 end
 
-function make_progression_params(effectiveness_table::Matrix{Float64},hospitalization_time_ratio::Float64, hospitalization_multiplier::Float64, death_multiplier::Float64)
+function make_progression_params(hospitalization_time_ratio::Float64, hospitalization_multiplier::Float64, death_multiplier::Float64)
   #this data needs updating
   dist_incubation_time = LogNormal(1.23028082387, 0.47862064526)
   dist_symptom_onset_time = Gamma(0.8738003969079596, 2.9148873266517685)
@@ -25,7 +24,6 @@ function make_progression_params(effectiveness_table::Matrix{Float64},hospitaliz
     dist_mild_recovery_time,
     dist_death_time,
     dist_severity_by_age,
-    effectiveness_table,
     hospitalization_time_ratio
   )
 end
@@ -41,7 +39,7 @@ const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_prob
 const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
 
-function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::ImmunityState, effectiveness_table::Matrix{Float64}, dist_severity_by_age::Matrix{AliasSampler})
+function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::ImmunityState, dist_severity_by_age::Matrix{AliasSampler})
   @assert age >= 0 "age should be non-negative"
   gender_int = gender + 1 |> UInt8
   dist = dist_severity_by_age[min(age + 1, max_age_hosp), gender_int]
@@ -49,22 +47,9 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::Im
   @assert severity_int <= 4 && severity_int > 1
   severity = severity_int |> Severity
   #reduction severity for immunited subject with some probability
-  if size(effectiveness_table,1) > 1
-    @assert size(effectiveness_table,1) == 6
-    immunity_int =  immunity |> UInt8
-    effectiveness = effectiveness_table[immunity_int,:]'
-    if severity == Critical && rand(rng) < effectiveness[severity_int]
-      severity_int = severity_int - 0x01
-      severity = severity_int |> Severity
-    end
-    if severity == Severe && rand(rng) < effectiveness[severity_int]
-      severity_int = severity_int - 0x01
-      severity = severity_int |> Severity
-    end
-    if severity == Mild && rand(rng) < effectiveness[severity_int]
-      severity_int = severity_int - 0x01
-      severity = severity_int |> Severity
-    end
+  if immunity == Immunity && severity_int > 1
+    severity_int = 2
+    severity = Mild
   end
   severity
 end
@@ -92,7 +77,6 @@ function sample_progression(rng::AbstractRNG, progression_data::ProgressionParam
     progression_data.dist_mild_recovery_time,
     progression_data.dist_death_time,
     progression_data.dist_severity_by_age,
-    progression_data.effectiveness_table,
     progression_data.hospitalization_time_ratio
     
   )
@@ -106,11 +90,10 @@ end
     dist_mild_recovery,
     dist_death_time,
     dist_severity_by_age,
-    effectiveness_table,
     hospitalization_time_ratio
   )
 
-  severity = sample_severity(rng, age, gender, immunity, effectiveness_table, dist_severity_by_age)
+  severity = sample_severity(rng, age, gender, immunity, dist_severity_by_age)
 
   mild_symptoms_time = missing
   severe_symptoms_time = missing

@@ -62,12 +62,6 @@ end
 @time MocosSim.reset!(state, MersenneTwister(0))
 @time MocosSim.InstantOutsideCases(;num_infections=100)(state, params)
 
-immunization_thresholds = Int32[0, 18, 40]
-immunization_table = Float32[0.25 0.00;
-                             0.50 0.25;
-                             0.75 0.50]
-immunization_previously_infected  = Float32[0.24, 0.24, 0.24]                          
-MocosSim.immunize!(state, params, immunization_thresholds, immunization_table,immunization_previously_infected)
 
 @info "warm-up"
 cb = Callback(50, 0)

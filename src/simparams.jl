@@ -32,7 +32,6 @@ struct SimParams <: AbstractSimParams
 
   progression_params::ProgressionParams
   strain_infectivity_table::StrainInfectivityTable
-  strain_susceptibility_table::StrainSusceptibilityTable
 
   constant_kernel_param::Float32
   household_kernel_param::Float32
@@ -68,7 +67,7 @@ end
 numindividuals(params::SimParams) = length(params.household_ptrs)
 
 straininfectivity(params::SimParams, strain::StrainKind) = straininfectivity(params.strain_infectivity_table, strain)
-susceptibility(params::SimParams, immunity::ImmunityState, strain::StrainKind) = susceptibility(params.strain_susceptibility_table, immunity, strain)
+susceptibility(params::SimParams, immunity::ImmunityState, strain::StrainKind) = 1.0
 
 issusceptible(params::SimParams, subject_id::Integer, immunity::ImmunityState, strain::StrainKind) = params.immunity_rand[subject_id] < susceptibility(params, immunity, strain)
 isimmune(params::SimParams, subject_id::Integer, immunity::ImmunityState, strain::StrainKind) = !issusceptible(params, subject_id, immunity, strain)
@@ -111,7 +110,6 @@ function load_params(
   backward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
   backward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
 
-  effectiveness_table::Matrix{Float64} = Float64[0.0 0.0 0.0 0.0], 
   hospitalization_time_ratio::Float64=1.0,
   hospitalization_multiplier::Float64=1.0, 
   death_multiplier::Float64=1.0,
@@ -121,7 +119,7 @@ function load_params(
 
   individuals_df::DataFrame = population
 
-  progression_params::ProgressionParams = make_progression_params(effectiveness_table, hospitalization_time_ratio, hospitalization_multiplier, death_multiplier)
+  progression_params::ProgressionParams = make_progression_params(hospitalization_time_ratio, hospitalization_multiplier, death_multiplier)
 
   infection_modulation = make_infection_modulation(infection_modulation_name; infection_modulation_params...)
   mild_detection_modulation = make_infection_modulation(mild_detection_modulation_name; mild_detection_modulation_params...)
@@ -185,8 +183,6 @@ function make_params(
   british_strain_multiplier::Real=1.70,
   delta_strain_multiplier::Real=1.7*1.5,
   omicron_strain_multiplier::Real=1.7*1.5*2.0,
-  delta_strain_susceptibility::Vector{T} where T<:Real=[1.0, 0.10, 0.48, 0.48, 0.30, 0.30],
-  omicron_strain_susceptibility::Vector{T} where T<:Real=[1.0, 0.7, 1.0, 0.5, 0.5, 0.5],
 
   hospital_kernel_param::Float64=0.0,
   healthcare_detection_prob::Float64=0.8,
@@ -199,7 +195,6 @@ function make_params(
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
   strain_infectivity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier,omicron_multiplier=omicron_strain_multiplier)
-  strain_susceptibility_table = make_susceptibility_table(delta_susceptibility=delta_strain_susceptibility, omicron_susceptibility=omicron_strain_susceptibility)
 
   age_coupling_kernel_params =
     if nothing === age_coupling_weights && nothing === age_coupling_thresholds && nothing === age_coupling_param; nothing
@@ -259,7 +254,6 @@ function make_params(
 
     progression_params,
     strain_infectivity_table,
-    strain_susceptibility_table,
 
     constant_kernel_param,
     household_kernel_param,
