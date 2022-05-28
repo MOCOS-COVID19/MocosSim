@@ -68,7 +68,7 @@ function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimPara
 
   incubation_time = progression.incubation_time
   @assert !ismissing(incubation_time)
-  event = Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event))
+  event = Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event), event.strain)
   push!(state.queue, event)
   return true
 end
@@ -119,7 +119,7 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
   incubation_time = progression.incubation_time
   @assert !ismissing(incubation_time)
   push!(state.queue,
-    Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event))
+    Event(Val(BecomeInfectiousEvent), time(event) + incubation_time, subject(event), event.strain)
   )
   return true
 end
@@ -137,6 +137,7 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
   progression = progressionof(state, subject_id)
 
   severity = progression.severity
+  setstrain!(state, subject_id, event.strain)
 
   infected_time = time(event) - progression.incubation_time
   if Asymptomatic == severity
@@ -354,7 +355,7 @@ function execute!(::Val{QuarantinedEvent}, state::SimState, params::SimParams, e
   end
 
   if extension(event)
-    @assert Undetected != detected(state, subject_id)
+    #@assert Undetected != detected(state, subject_id)
     setfreedom!(state, subject_id, HomeQuarantine)
   elseif Free == freedom_state
     @assert !is_already_quarantined "quarantined cannot be free, but $subject_id is"
@@ -410,7 +411,7 @@ end
 
 function execute!(::Val{ImmunizationEvent}, state::SimState, params::SimParams, event::Event)::Bool
   subject_id = subject(event)
-  new_immunity = immunitystate(event)
+  new_immunity = immunitykind(event)
   setimmunity!(state, subject_id, new_immunity)
   return true
 end
@@ -435,7 +436,9 @@ function quarantinehousehold!(state::SimState, params::SimParams, subject_id::In
     if !include_subject && (member == subject_id)
       continue
     end
-
+    if rand(state.rng) > params.household_params.quarantine_prob && member != subject_id
+      continue
+    end
     member_freedom = freedom(state, member)
 
     if (Hospitalized == member_freedom) || (Released == member_freedom)
@@ -449,8 +452,11 @@ end
 
 function tracehousehold!(state::SimState, params::SimParams, subject_id::Integer; trace_household_connections::Bool)
   for member in householdof(params, subject_id)
-     backtrace!(state, params, member, trace_household_connections=trace_household_connections)
-     forwardtrace!(state, params, member, trace_household_connections=trace_household_connections)
+    if rand(state.rng) > params.household_params.trace_prob && member != subject_id
+      continue
+    end
+    backtrace!(state, params, member, trace_household_connections=trace_household_connections)
+    forwardtrace!(state, params, member, trace_household_connections=trace_household_connections)
   end
   nothing
 end

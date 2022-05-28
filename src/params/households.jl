@@ -1,3 +1,8 @@
+Base.@kwdef struct HouseholdParams
+  quarantine_prob::Float64 = 0.5
+  trace_prob::Float64 = 0.5
+end
+
 function make_household_ptrs!(
     ptrs::AbstractVector{Tuple{Ti,Ti}},
     household_indices::AbstractVector{T} where T<:Integer

@@ -24,6 +24,30 @@ function evalmodulation(f::TanhModulation, state::AbstractSimState, ::AbstractSi
   tanh_modulation(fear, f.loc, f.scale, 1.0, f.limit_value)
 end
 
+struct TwoTanhModulations <: InfectionModulation
+  weight_detected::Float64
+  weight_deaths::Float64
+  weight_days::Float64
+  loc1::Float64
+  scale1::Float64
+  limit_value1::Float64
+  loc2::Float64
+  scale2::Float64
+  limit_value2::Float64
+
+  TwoTanhModulations(;weight_detected::Real=0, weight_deaths::Real=0, weight_days::Real=0, loc1::Real=0, scale1::Real=0, limit_value1::Real=0, loc2::Real=0, scale2::Real=0, limit_value2::Real=0) =
+    0 <= limit_value2 <= limit_value1 <= 1 && loc1 < loc2 ? new(weight_detected, weight_deaths, weight_days, loc1, scale1, limit_value1, loc2, scale2, limit_value2) : error("initial_value1 and initial_value2 must be from 0 to 1 and initial_value2 must be not larger than initial_value1, got ($initial_value1, $initial_value2), also loc2 must be after loc1, got ($loc1, $loc2)")
+end
+
+function evalmodulation(f::TwoTanhModulations, state::AbstractSimState, ::AbstractSimParams)::Float64
+  num_days = time(state)
+  num_detected = numdetected(state)
+  num_deaths = numdead(state)
+  fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths + num_days * f.weight_days
+  modulation1 = tanh_modulation(fear, f.loc1, f.scale1, 1.0, f.limit_value1)
+  tanh_modulation(fear, f.loc2, f.scale2, modulation1, f.limit_value2)
+end
+
 struct IncreasingTanhModulation <: InfectionModulation
   weight_detected::Float64
   weight_deaths::Float64
@@ -43,6 +67,31 @@ function evalmodulation(f::IncreasingTanhModulation, state::AbstractSimState, ::
 
   fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths + num_days * f.weight_days
   tanh_modulation(fear, f.loc, f.scale, f.initial_value, 1.0)
+end
+
+struct IncreasingTwoTanhModulations <: InfectionModulation
+  weight_detected::Float64
+  weight_deaths::Float64
+  weight_days::Float64
+  loc1::Float64
+  scale1::Float64
+  initial_value1::Float64
+  loc2::Float64
+  scale2::Float64
+  initial_value2::Float64
+
+  IncreasingTwoTanhModulations(;weight_detected::Real=0, weight_deaths::Real=0, weight_days::Real=0, loc1::Real=0, scale1::Real=0, initial_value1::Real=0, loc2::Real=0, scale2::Real=0, initial_value2::Real=0) =
+    0 <= initial_value1 <= initial_value2 <= 1 && loc1 < loc2 ? new(weight_detected, weight_deaths, weight_days, loc1, scale1, initial_value1, loc2, scale2, initial_value2) : error("initial_value1 and initial_value2 must be from 0 to 1 and initial_value2 must be not smaller than initial_value1, got ($initial_value1, $initial_value2), also loc2 must be after loc1, got ($loc1, $loc2)")
+end
+
+function evalmodulation(f::IncreasingTwoTanhModulations, state::AbstractSimState, ::AbstractSimParams)::Float64
+  num_days = time(state)
+  num_detected = numdetected(state)
+  num_deaths = numdead(state)
+
+  fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths + num_days * f.weight_days
+  modulation1 = tanh_modulation(fear, f.loc1, f.scale1, f.initial_value1, f.initial_value2)
+  tanh_modulation(fear, f.loc2, f.scale2, modulation1, 1.0)
 end
 
 evalmodulation(modulation::Nothing, state::AbstractSimState, params::AbstractSimParams)::Float64 = 1.0
@@ -77,7 +126,9 @@ end
 # This all to avoid using @eval and others
 const modulations = Dict{String, Type{T} where T}(
     "TanhModulation" => TanhModulation,
-    "IncreasingTanhModulation" => IncreasingTanhModulation
+    "TwoTanhModulations" => TwoTanhModulations,
+    "IncreasingTanhModulation" => IncreasingTanhModulation,
+    "IncreasingTwoTanhModulations" => IncreasingTwoTanhModulations
 )
 
 make_infection_modulation(::Nothing) = nothing

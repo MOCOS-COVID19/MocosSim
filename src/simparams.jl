@@ -61,6 +61,8 @@ struct SimParams <: AbstractSimParams
 
   screening_params::Union{Nothing, ScreeningParams}
   spreading_params::Union{Nothing, SpreadingParams}
+
+  household_params::Union{Nothing, HouseholdParams}
 end
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
@@ -89,7 +91,7 @@ milddetectionprob(s::SimState, p::SimParams) = p.mild_detection_prob * evalmodul
 forwardtracingprob(s::SimState, p::SimParams) = p.forward_tracing_prob * evalmodulation(p.forward_tracing_modulation, s, p)
 backwardtracingprob(s::SimState, p::SimParams) = p.backward_tracing_prob * evalmodulation(p.backward_tracing_modulation, s, p)
 
-milddetectiondelaydist(p::SimParams) = Uniform(p.mild_detection_delay, nextfloat(p.mild_detection_delay))
+milddetectiondelaydist(p::SimParams) = Exponential(p.mild_detection_delay)
 forwarddetectiondelaydist(params::SimParams) = Exponential(params.forward_detection_delay)
 backwarddetectiondelaydist(params::SimParams) = Exponential(params.backward_detection_delay)
 
@@ -109,12 +111,17 @@ function load_params(
   backward_tracing_modulation_name::Union{Nothing, AbstractString} = nothing,
   backward_tracing_modulation_params::NamedTuple = NamedTuple{}(),
 
+  effectiveness_table::Matrix{Float64} = Float64[0.0 0.0 0.0 0.0], 
+  hospitalization_time_ratio::Float64=1.0,
+  hospitalization_multiplier::Float64=1.0, 
+  death_multiplier::Float64=1.0,
+
   kwargs...
   )
 
   individuals_df::DataFrame = population
 
-  progression_params::ProgressionParams = make_progression_params()
+  progression_params::ProgressionParams = make_progression_params(effectiveness_table, hospitalization_time_ratio, hospitalization_multiplier, death_multiplier)
 
   infection_modulation = make_infection_modulation(infection_modulation_name; infection_modulation_params...)
   mild_detection_modulation = make_infection_modulation(mild_detection_modulation_name; mild_detection_modulation_params...)
@@ -165,6 +172,7 @@ function make_params(
   age_coupling_use_genders::Bool=false,
 
   screening_params::Union{Nothing,ScreeningParams}=nothing,
+  household_params::Union{Nothing,HouseholdParams}=nothing,
 
   spreading_alpha::Union{Nothing,Real}=nothing,
   spreading_x0::Real=1,
@@ -177,6 +185,8 @@ function make_params(
   british_strain_multiplier::Real=1.70,
   delta_strain_multiplier::Real=1.7*1.5,
   omicron_strain_multiplier::Real=1.7*1.5*2.0,
+  delta_strain_susceptibility::Vector{T} where T<:Real=[1.0, 0.10, 0.48, 0.48, 0.30, 0.30],
+  omicron_strain_susceptibility::Vector{T} where T<:Real=[1.0, 0.7, 1.0, 0.5, 0.5, 0.5],
 
   hospital_kernel_param::Float64=0.0,
   healthcare_detection_prob::Float64=0.8,
@@ -189,7 +199,7 @@ function make_params(
   household_ptrs = make_household_ptrs(individuals_df.household_index)
 
   strain_infectivity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier,omicron_multiplier=omicron_strain_multiplier)
-  strain_susceptibility_table = make_susceptibility_table()
+  strain_susceptibility_table = make_susceptibility_table(delta_susceptibility=delta_strain_susceptibility, omicron_susceptibility=omicron_strain_susceptibility)
 
   age_coupling_kernel_params =
     if nothing === age_coupling_weights && nothing === age_coupling_thresholds && nothing === age_coupling_param; nothing
@@ -234,6 +244,13 @@ function make_params(
     else error("spreading_alpha must be larger than 0, got $spreading_alpha")
     end
 
+  household_params =
+    if nothing === household_params; HouseholdParams()
+    elseif 0.0 <= household_params.quarantine_prob && 1.0 >= household_params.quarantine_prob && 0.0 <= household_params.trace_prob && 1.0 >= household_params.trace_prob
+      household_params
+    else error("household_params has invalid values for probas")
+    end
+
   params = SimParams(
     household_ptrs,
     individuals_df.age,
@@ -270,7 +287,8 @@ function make_params(
     backward_tracing_modulation,
 
     screening_params,
-    spreading_params
+    spreading_params,
+    household_params
   )
   params
 end

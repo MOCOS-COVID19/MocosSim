@@ -134,6 +134,13 @@ function quarantine_cancel!(state::SimState, person_id::Integer)
   nothing
 end
 
+function setstrain!(state::SimState, person_id::Integer, new_strain::StrainKind)
+  orig = state.individuals[person_id]
+  @assert orig.strain == NullStrain
+  state.individuals[person_id] = @set orig.strain = new_strain
+  nothing
+end
+
 setsubjecthealth!(state::SimState, event::Event, health::HealthState) = sethealth!(state, subject(event), health)
 setsubjectfreedom!(state::SimState, event::Event, freedom::FreedomState) = setfreedom!(state, subject(event), freedom)
 

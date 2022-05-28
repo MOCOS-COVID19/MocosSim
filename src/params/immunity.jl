@@ -9,18 +9,20 @@ function make_infectivity_table(;base_multiplier::Real=1.0, british_multiplier::
   immunity
 end
 
-function make_susceptibility_table()
+function make_susceptibility_table(;delta_susceptibility::Vector{T}, omicron_susceptibility::Vector{T}) where T <: Real
   #each column is distinct StrainKind
   #each row is distinct ImmunityState
 
   table = @SMatrix [
-    #ChineseStrain  BritishStrain DeltaStrain OmicronStrain
-    1.00            1.00          1.00        1.00;         # NoImmunity
-    0.01            0.01          0.10        0.60;         # NaturalImmunity
-    0.10            0.10          0.50        0.75;         # VecVacImmunity
-    0.03            0.10          0.30        0.75;         # MRNAVacImmunity
+    #ChineseStrain  BritishStrain DeltaStrain
+    1.00   1.00;
+    0.01   0.01;
+    0.10   0.10;
+    0.10   0.10;
+    0.03   0.10;
+    0.03   0.10;
   ]
-
+  table = hcat(table, delta_susceptibility, omicron_susceptibility)
   @assert all( 0 .<= table .<= 1)
   table
 end
@@ -33,6 +35,33 @@ end
 
 straininfectivity(table::StrainInfectivityTable, strain::StrainKind) = table[UInt(strain)]
 susceptibility(table::StrainSusceptibilityTable, immunity::ImmunityState, strain::StrainKind) = table[UInt(immunity), UInt(strain)]
+immunited(immunity::ImmunityState) = immunity != NoImmunity
+vaccinated(immunity::ImmunityState) = immunity == VacImmunity || immunity == VacNaturalImmunity || immunity == BoostImmunity || immunity == BoostNaturalImmunity
+boostered(immunity::ImmunityState) = immunity == BoostImmunity || immunity == BoostNaturalImmunity
+previnfected(immunity::ImmunityState) = immunity == NaturalImmunity || immunity == VacNaturalImmunity || BoostNaturalImmunity
+
+
+function immunize!(state::AbstractSimState, params::AbstractSimParams, immunization_thresholds::Vector{Int32},immunization_table::Matrix{Float32}, previously_infected::Vector{Float32})::Nothing
+  @info "Immunizing"
+  N = numindividuals(state)
+  @assert length(previously_infected) == 3
+  Samplers = AliasSampler[]
+  for gr in 1:length(immunization_thresholds)
+    no_immunity = 1-immunization_table[gr,1]
+    full_vaccinated = immunization_table[gr,1]-immunization_table[gr,2]
+    boostered = immunization_table[gr,2]
+    immunization_prob = [no_immunity*(1-previously_infected[1]), no_immunity*previously_infected[1], full_vaccinated*(1-previously_infected[2]), full_vaccinated*previously_infected[2], boostered*(1-previously_infected[3]), boostered*previously_infected[3]]
+    push!(Samplers, MocosSim.AliasSampler(UInt8,immunization_prob))
+  end
+  for id in 1:N
+    age = params.ages[id]
+    group_ids = agegroup(immunization_thresholds,age)
+    immunity_int = asample(Samplers[group_ids])
+    immunity = immunity_int |> ImmunityState
+    setimmunity!(state, id, immunity)
+  end
+  nothing
+end
 
 function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bool)::Nothing
   @info "Immunizing"
