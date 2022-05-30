@@ -10,65 +10,68 @@ end
 
 struct ImmunizationEvents
   subjects::Vector{PersonIdx}
-  times::Vector{TimePoint}
-  lost_times_infection::Vector{TimePoint}
-  lost_times_server::Vector{TimePoint}
+  immunity_uptake_times::Vector{TimePoint}
+  lost_immunity_times::Vector{TimePoint}
+  immunity_types::Vector{ImmunityState}
 end
 
+function make_immunity_table(state::AbstractSimState, level::Real)
+  N = numindividuals(state)
+  subjects = PersonIdx[]
+  immunity_uptake_times = TimePoint[]
+  lost_immunity_times = TimePoint[]
+  immunity_types = ImmunityState[]
+  for id in 1:floor(N*level)
+    push!(subjects, id)
+    push!(immunity_uptake_times, rand(state.rng)*30)
+    push!(lost_immunity_times, rand(state.rng)*90)
+    push!(immunity_types, against_infection)
+  end
+  ImmunizationEvents(subjects, immunity_uptake_times, lost_immunity_times, immunity_types)
+end
 
 straininfectivity(table::StrainInfectivityTable, strain::StrainKind) = table[UInt(strain)]
-immunited(immunity::ImmunityState) = immunity == Immunity
+immunited(immunity::ImmunityState) = immunity != NoImmunity
 
 
-# function immunize!(state::AbstractSimState, params::AbstractSimParams, immunization_thresholds::Vector{Int32},immunization_table::Matrix{Float32}, previously_infected::Vector{Float32})::Nothing
-#   @info "Immunizing"
-#   N = numindividuals(state)
-#   @assert length(previously_infected) == 3
-#   Samplers = AliasSampler[]
-#   for gr in 1:length(immunization_thresholds)
-#     no_immunity = 1-immunization_table[gr,1]
-#     full_vaccinated = immunization_table[gr,1]-immunization_table[gr,2]
-#     boostered = immunization_table[gr,2]
-#     immunization_prob = [no_immunity*(1-previously_infected[1]), no_immunity*previously_infected[1], full_vaccinated*(1-previously_infected[2]), full_vaccinated*previously_infected[2], boostered*(1-previously_infected[3]), boostered*previously_infected[3]]
-#     push!(Samplers, MocosSim.AliasSampler(UInt8,immunization_prob))
-#   end
-#   for id in 1:N
-#     age = params.ages[id]
-#     group_ids = agegroup(immunization_thresholds,age)
-#     immunity_int = asample(Samplers[group_ids])
-#     immunity = immunity_int |> ImmunityState
-#     setimmunity!(state, id, immunity)
-#   end
-#   nothing
-# end
+function immunize!(state::SimState, immunization::ImmunizationEvents)::Nothing
+  @info "Immunizing"
+  N = length(immunization.immunity_uptake_times)
+  current_time = time(state)
+  count = 0
+  enqueued = 0
+  for i in 1:N
+    if immunization.immunity_uptake_times[i] <= current_time
+      setimmunity!(state, immunization.subjects[i], immunization.immunity_types[i])
+      push!(state.queue,
+        Event( Val(ImmunizationEvent),
+          immunization.lost_immunity_times[i],
+          immunization.subjects[i],
+          NoImmunity
+        )
+      )
+      count += 1
+    else
+      push!(state.queue,
+        Event( Val(ImmunizationEvent),
+          immunization.immunity_uptake_times[i],
+          immunization.subjects[i],
+          immunization.immunity_types[i]
+        )
+      )
+      push!(state.queue,
+        Event( Val(ImmunizationEvent),
+          immunization.lost_immunity_times[i],
+          immunization.subjects[i],
+          NoImmunity
+        )
+      )
+      enqueued += 1
+    end
+  end
 
-# function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bool)::Nothing
-#   @info "Immunizing"
-#   N = length(immunization.times)
-#   @assert N == length(immunization.subjects) == length(immunization.immunity_kinds)
-#   @assert issorted(immunization.times)
-
-#   current_time = time(state)
-#   count = 0
-#   enqueued = 0
-#   for i in 1:N
-#     if immunization.times[i] <= current_time
-#       setimmunity!(state, immunization.subjects[i], immunization.immunity_kinds[i])
-#       count += 1
-#     elseif enqueue
-#       push!(state.queue,
-#         Event( Val(ImmunizationEvent),
-#           immunization.times[i],
-#           immunization.subjects[i],
-#           immunization.immunity_kinds[i]
-#         )
-#       )
-#       enqueued += 1
-#     end
-#   end
-
-#   @info "Executed $N entires: immunized $count individuals and enqueued $enqueued "
+  @info "Executed $N entires: immunized $count individuals and enqueued $enqueued "
 
 
-#   nothing
-# end
+  nothing
+end

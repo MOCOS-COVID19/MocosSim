@@ -32,7 +32,8 @@ const NUM_STRAINS = length(instances(StrainKind)) - 1
 @enum ImmunityState::UInt8 begin
   NullImmunity = 0
   NoImmunity
-  Immunity
+  against_infection
+  against_severe_progression
 end
 
 const NUM_IMMUNITIES = length(instances(ImmunityState)) - 1

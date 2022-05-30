@@ -47,7 +47,7 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::Im
   @assert severity_int <= 4 && severity_int > 1
   severity = severity_int |> Severity
   #reduction severity for immunited subject with some probability
-  if immunity == Immunity && severity_int > 1
+  if immunity != NoImmunity && severity_int > 1
     severity_int = 2
     severity = Mild
   end
