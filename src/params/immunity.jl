@@ -11,14 +11,29 @@ end
 struct ImmunizationEvents
   subjects::Vector{PersonIdx}
   times::Vector{TimePoint}
-  lost_times_infection::Vector{TimePoint}
-  lost_times_server::Vector{TimePoint}
+  times_lost_infection_immunity::Vector{TimePoint}
+  times_lost_severe_immunity::Vector{TimePoint}
 end
 
 
 straininfectivity(table::StrainInfectivityTable, strain::StrainKind) = table[UInt(strain)]
 immunited(immunity::ImmunityState) = immunity == Immunity
 
+
+function make_immunity_table(state::AbstractSimState, level::Real)
+  N = numindividuals(state)
+  subjects = PersonIdx[]
+  times = TimePoint[]
+  times_lost_infection_immunity = TimePoint[]
+  times_lost_severe_immunity = TimePoint[]
+  for id in 1:floor(N*level)
+    push!(subjects, id)
+    push!(times, 0.0)
+    push!(times_lost_infection_immunity, rand(state.rng)*90)
+    push!(times_lost_severe_immunity, rand(state.rng)*210)
+  end
+  ImmunizationEvents(subjects, times, times_lost_infection_immunity, times_lost_severe_immunity)
+end
 
 # function immunize!(state::AbstractSimState, params::AbstractSimParams, immunization_thresholds::Vector{Int32},immunization_table::Matrix{Float32}, previously_infected::Vector{Float32})::Nothing
 #   @info "Immunizing"
@@ -42,33 +57,31 @@ immunited(immunity::ImmunityState) = immunity == Immunity
 #   nothing
 # end
 
-# function immunize!(state::SimState, immunization::ImmunizationOrder; enqueue::Bool)::Nothing
-#   @info "Immunizing"
-#   N = length(immunization.times)
-#   @assert N == length(immunization.subjects) == length(immunization.immunity_kinds)
-#   @assert issorted(immunization.times)
+function immunize!(state::SimState, immunization::ImmunizationEvents; enqueue::Bool)::Nothing
+  @info "Immunizing"
+  N = length(immunization.times)
+  current_time = time(state)
+  count = 0
+  enqueued = 0
+  for i in 1:N
+    if immunization.times[i] <= current_time
+      setimmunity!(state, immunization.subjects[i], Immunity, immunization.times_lost_infection_immunity[i], immunization.times_lost_severe_immunity[i])
+      count += 1
+    elseif enqueue
+      push!(state.queue,
+        Event( Val(ImmunizationEvent),
+          immunization.times[i],
+          immunization.subjects[i],
+          Immunity#,
+          #immunization.times_lost_infection_immunity[i],
+          #immunization.times_lost_severe_immunity[i]
+        )
+      )
+      enqueued += 1
+    end
+  end
 
-#   current_time = time(state)
-#   count = 0
-#   enqueued = 0
-#   for i in 1:N
-#     if immunization.times[i] <= current_time
-#       setimmunity!(state, immunization.subjects[i], immunization.immunity_kinds[i])
-#       count += 1
-#     elseif enqueue
-#       push!(state.queue,
-#         Event( Val(ImmunizationEvent),
-#           immunization.times[i],
-#           immunization.subjects[i],
-#           immunization.immunity_kinds[i]
-#         )
-#       )
-#       enqueued += 1
-#     end
-#   end
+  @info "Executed $N entires: immunized $count individuals and enqueued $enqueued "
 
-#   @info "Executed $N entires: immunized $count individuals and enqueued $enqueued "
-
-
-#   nothing
-# end
+  nothing
+end

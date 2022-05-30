@@ -59,7 +59,9 @@ function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimPara
     gender(params, subject_id),
     immunityof(state, subject_id),
     timesinceimmunization(state, subject_id),
-    strainkind(event)
+    strainkind(event),
+    time(event),
+    severe_time(state, subject_id)
   )
 
   setprogression!(state, subject_id, progression)
@@ -110,7 +112,9 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
     gender(params, subject(event)),
     immunityof(state, subject(event)),
     timesinceimmunization(state, subject(event)),
-    strainkind(event)
+    strainkind(event),
+    time(event),
+    severe_time(state,subject(event))
   )
   setprogression!(state, subject(event), progression)
 
@@ -412,7 +416,9 @@ end
 function execute!(::Val{ImmunizationEvent}, state::SimState, params::SimParams, event::Event)::Bool
   subject_id = subject(event)
   new_immunity = immunitykind(event)
-  setimmunity!(state, subject_id, new_immunity)
+  new_infections_immuity = time(event)
+  new_severe_immunity = time(event)
+  setimmunity!(state, subject_id, new_immunity, new_infections_immuity, new_severe_immunity)
   return true
 end
 

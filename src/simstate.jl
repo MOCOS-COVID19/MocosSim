@@ -72,6 +72,7 @@ strainof(state::SimState, person_id::Integer) = strainof(state.forest, person_id
 immunityof(state::SimState, person_id::Integer)::ImmunityState = state.individuals[person_id].immunity
 immunizationday(state::SimState, person_id::Integer) = state.individuals[person_id].immunization_day
 timesinceimmunization(state::SimState, person_id::Integer)::TimePoint = time(state) - TimePoint(immunizationday(state, person_id))
+severe_time(state::SimState, person_id::Integer)::TimePoint = state.individuals[person_id].severe_immunity
 
 function progressionof(state::SimState, person_id::Integer)
   progression = state.progressions[person_id]
@@ -104,13 +105,12 @@ function setdetected!(state::SimState, person_id::Integer, new_detected::Detecti
   nothing
 end
 
-function setimmunity!(state::SimState, person_id::Integer, new_immunity::ImmunityState, time::Real)
+function setimmunity!(state::SimState, person_id::Integer, new_immunity::ImmunityState, new_infections_immuity::Real, new_severe_immunity::Real)
   orig = state.individuals[person_id]
   state.individuals[person_id] = @set orig.immunity = new_immunity
+  state.individuals[person_id] = @set orig.infections_immuity = new_infections_immuity
+  state.individuals[person_id] = @set orig.severe_immunity = new_severe_immunity
 end
-
-setimmunity!(state::SimState, person_id::Integer, new_immunity::ImmunityState) =
-  setimmunity!(state, person_id, new_immunity, time(state))
 
 function setprogression!(state::SimState, person_id::Integer, progression::Progression)
   @assert state.progressions[person_id].severity == UndefinedSeverity

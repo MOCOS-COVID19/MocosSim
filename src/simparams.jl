@@ -67,10 +67,7 @@ end
 numindividuals(params::SimParams) = length(params.household_ptrs)
 
 straininfectivity(params::SimParams, strain::StrainKind) = straininfectivity(params.strain_infectivity_table, strain)
-susceptibility(params::SimParams, immunity::ImmunityState, strain::StrainKind) = 1.0
-
-issusceptible(params::SimParams, subject_id::Integer, immunity::ImmunityState, strain::StrainKind) = params.immunity_rand[subject_id] < susceptibility(params, immunity, strain)
-isimmune(params::SimParams, subject_id::Integer, immunity::ImmunityState, strain::StrainKind) = !issusceptible(params, subject_id, immunity, strain)
+isimmune(state::SimState, subject_id::Integer, immunity::ImmunityState) = immunited(immunity) && time(state) <= state.individuals[subject_id].infections_immuity
 
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
 age(params::SimParams, person_id::Integer) = params.ages[person_id]

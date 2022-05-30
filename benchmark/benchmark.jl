@@ -62,6 +62,8 @@ end
 @time MocosSim.reset!(state, MersenneTwister(0))
 @time MocosSim.InstantOutsideCases(;num_infections=100)(state, params)
 
+immunity_params = MocosSim.make_immunity_table(state, 0.5) 
+MocosSim.immunize!(state,immunity_params; enqueue = true)
 
 @info "warm-up"
 cb = Callback(50, 0)

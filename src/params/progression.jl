@@ -39,7 +39,7 @@ const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_prob
 const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
 
-function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::ImmunityState, dist_severity_by_age::Matrix{AliasSampler})
+function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::ImmunityState, dist_severity_by_age::Matrix{AliasSampler}, time, severe_time)
   @assert age >= 0 "age should be non-negative"
   gender_int = gender + 1 |> UInt8
   dist = dist_severity_by_age[min(age + 1, max_age_hosp), gender_int]
@@ -47,7 +47,7 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::Im
   @assert severity_int <= 4 && severity_int > 1
   severity = severity_int |> Severity
   #reduction severity for immunited subject with some probability
-  if immunity == Immunity && severity_int > 1
+  if immunity == Immunity && time <= severe_time && severity_int > 1
     severity_int = 2
     severity = Mild
   end
@@ -64,7 +64,7 @@ function sample_if_death(rng::AbstractRNG, severity::Severity, age::Real)
   rand(rng) < death_prob
 end
 
-function sample_progression(rng::AbstractRNG, progression_data::ProgressionParams, age::Real, gender::Bool, immunity::ImmunityState, time_since_immunization::Real, strain::StrainKind)
+function sample_progression(rng::AbstractRNG, progression_data::ProgressionParams, age::Real, gender::Bool, immunity::ImmunityState, time_since_immunization::Real, strain::StrainKind, time::TimePoint, severe_time::TimePoint)
   #TODO expecting updated progression generation soon
   sample_progression(
     rng,
@@ -77,8 +77,9 @@ function sample_progression(rng::AbstractRNG, progression_data::ProgressionParam
     progression_data.dist_mild_recovery_time,
     progression_data.dist_death_time,
     progression_data.dist_severity_by_age,
-    progression_data.hospitalization_time_ratio
-    
+    progression_data.hospitalization_time_ratio,
+    time,
+    severe_time
   )
 end
 
@@ -90,10 +91,12 @@ end
     dist_mild_recovery,
     dist_death_time,
     dist_severity_by_age,
-    hospitalization_time_ratio
+    hospitalization_time_ratio,
+    time,
+    severe_time
   )
 
-  severity = sample_severity(rng, age, gender, immunity, dist_severity_by_age)
+  severity = sample_severity(rng, age, gender, immunity, dist_severity_by_age, time, severe_time)
 
   mild_symptoms_time = missing
   severe_symptoms_time = missing
@@ -157,13 +160,17 @@ function resample!(
   dist_severity_by_age)
 
   for i in 1:length(ages)
-    progressions[i] = sample_progression(rng, ages[i], genders[i],
+    progressions[i] = sample_progression(rng, ages[i], genders[i], NoImmunity,
       dist_incubation_time,
       dist_symptom_onset_time,
       dist_hospitalization_time,
       dist_mild_recovery_time,
       dist_death_time,
-      dist_severity_by_age)
+      dist_severity_by_age,
+      1.0,
+      0.0,
+      0.0
+      )
   end
   progressions
 end
