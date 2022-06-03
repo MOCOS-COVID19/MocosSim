@@ -22,10 +22,17 @@ function make_immunity_table(state::AbstractSimState, level::Real)
   lost_immunity_times = TimePoint[]
   immunity_types = ImmunityState[]
   for id in 1:floor(N*level)
+    time_begin = 0
+    time_half = rand(state.rng)*90
+    time_end = time_half + rand(state.rng)*90
     push!(subjects, id)
-    push!(immunity_uptake_times, rand(state.rng)*30)
-    push!(lost_immunity_times, rand(state.rng)*90)
+    push!(immunity_uptake_times, time_begin)
+    push!(lost_immunity_times, time_half)
     push!(immunity_types, against_infection)
+    push!(subjects, id)
+    push!(immunity_uptake_times, time_half)
+    push!(lost_immunity_times, time_end)
+    push!(immunity_types, against_severe_progression)
   end
   ImmunizationEvents(subjects, immunity_uptake_times, lost_immunity_times, immunity_types)
 end
