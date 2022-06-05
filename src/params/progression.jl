@@ -157,13 +157,14 @@ function resample!(
   dist_severity_by_age)
 
   for i in 1:length(ages)
-    progressions[i] = sample_progression(rng, ages[i], genders[i], immunities[i]
+    progressions[i] = sample_progression(rng, ages[i], genders[i], true,
       dist_incubation_time,
       dist_symptom_onset_time,
       dist_hospitalization_time,
       dist_mild_recovery_time,
       dist_death_time,
-      dist_severity_by_age)
+      dist_severity_by_age,
+      1.0)
   end
   progressions
 end
