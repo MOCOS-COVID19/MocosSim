@@ -2,7 +2,8 @@ struct IndividualState
     health::HealthState
     freedom::FreedomState
     detected::DetectionStatus
-    immunity::ImmunityState
+    infection_immunity::Bool
+    severe_immunity::Bool
     immunization_day::TimeDay
     quarantine_level::SafeUInt16
     strain::StrainKind
@@ -12,7 +13,8 @@ struct IndividualState
     Healthy,
     Free,
     Undetected,
-    NoImmunity,
+    false,
+    false,
     0,
     0,
     NullStrain

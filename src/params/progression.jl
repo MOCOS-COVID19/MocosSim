@@ -39,7 +39,7 @@ const hospitalization_time_sampler = AliasSampler(Int, hospitalization_time_prob
 const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 
 
-function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::ImmunityState, dist_severity_by_age::Matrix{AliasSampler})
+function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::Bool, dist_severity_by_age::Matrix{AliasSampler})
   @assert age >= 0 "age should be non-negative"
   gender_int = gender + 1 |> UInt8
   dist = dist_severity_by_age[min(age + 1, max_age_hosp), gender_int]
@@ -47,7 +47,7 @@ function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::Im
   @assert severity_int <= 4 && severity_int > 1
   severity = severity_int |> Severity
   #reduction severity for immunited subject with some probability
-  if immunity != NoImmunity && severity_int > 1
+  if immunity && severity_int > 1
     severity_int = 2
     severity = Mild
   end
@@ -64,7 +64,7 @@ function sample_if_death(rng::AbstractRNG, severity::Severity, age::Real)
   rand(rng) < death_prob
 end
 
-function sample_progression(rng::AbstractRNG, progression_data::ProgressionParams, age::Real, gender::Bool, immunity::ImmunityState, time_since_immunization::Real, strain::StrainKind)
+function sample_progression(rng::AbstractRNG, progression_data::ProgressionParams, age::Real, gender::Bool, immunity::Bool, time_since_immunization::Real, strain::StrainKind)
   #TODO expecting updated progression generation soon
   sample_progression(
     rng,
@@ -83,7 +83,7 @@ function sample_progression(rng::AbstractRNG, progression_data::ProgressionParam
 end
 
 
-@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, immunity::ImmunityState,
+@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, immunity::Bool,
     dist_incubation,
     dist_symptom_onset,
     dist_hospitalization,
@@ -119,7 +119,7 @@ end
     if (severity==Mild)
       recovery_time = mild_symptoms_time + rand(rng, dist_mild_recovery)
     else
-      if immunited(immunity) # && (severity==Asymptomatic)
+      if immunity # && (severity==Asymptomatic)
         recovery_time = incubation_time  # TODO if we want this # rand(rng, dist_mild_recovery)
       else # now only asymptomatic, but not vaccinated
         recovery_time = rand(rng, dist_mild_recovery)
@@ -157,7 +157,7 @@ function resample!(
   dist_severity_by_age)
 
   for i in 1:length(ages)
-    progressions[i] = sample_progression(rng, ages[i], genders[i],
+    progressions[i] = sample_progression(rng, ages[i], genders[i], immunities[i]
       dist_incubation_time,
       dist_symptom_onset_time,
       dist_hospitalization_time,

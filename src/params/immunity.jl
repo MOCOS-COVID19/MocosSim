@@ -38,7 +38,6 @@ function make_immunity_table(state::AbstractSimState, level::Real)
 end
 
 straininfectivity(table::StrainInfectivityTable, strain::StrainKind) = table[UInt(strain)]
-immunited(immunity::ImmunityState) = immunity != NoImmunity
 
 
 function immunize!(state::SimState, immunization::ImmunizationEvents)::Nothing
@@ -54,7 +53,7 @@ function immunize!(state::SimState, immunization::ImmunizationEvents)::Nothing
         Event( Val(ImmunizationEvent),
           immunization.lost_immunity_times[i],
           immunization.subjects[i],
-          NoImmunity
+          immunization.immunity_types[i]
         )
       )
       count += 1
@@ -70,7 +69,7 @@ function immunize!(state::SimState, immunization::ImmunizationEvents)::Nothing
         Event( Val(ImmunizationEvent),
           immunization.lost_immunity_times[i],
           immunization.subjects[i],
-          NoImmunity
+          immunization.immunity_types[i]
         )
       )
       enqueued += 1

@@ -69,7 +69,7 @@ sourcehealth(state::SimState, event::Event)::HealthState = health(state, source(
 sourcefreedom(state::SimState, event::Event)::FreedomState = freedom(state, source(event))
 
 strainof(state::SimState, person_id::Integer) = strainof(state.forest, person_id)
-immunityof(state::SimState, person_id::Integer)::ImmunityState = state.individuals[person_id].immunity
+immunityof(state::SimState, person_id::Integer)::Bool = state.individuals[person_id].severe_immunity
 immunizationday(state::SimState, person_id::Integer) = state.individuals[person_id].immunization_day
 timesinceimmunization(state::SimState, person_id::Integer)::TimePoint = time(state) - TimePoint(immunizationday(state, person_id))
 
@@ -106,7 +106,21 @@ end
 
 function setimmunity!(state::SimState, person_id::Integer, new_immunity::ImmunityState, time::Real)
   orig = state.individuals[person_id]
-  state.individuals[person_id] = @set orig.immunity = new_immunity
+
+  if new_immunity == against_infection
+    if orig.infection_immunity
+      state.individuals[person_id] = @set orig.infection_immunity = false
+    else
+      state.individuals[person_id] = @set orig.infection_immunity = true
+    end
+  end
+  if new_immunity == against_severe_progression
+    if orig.infection_immunity
+      state.individuals[person_id] = @set orig.severe_immunity = false
+    else
+      state.individuals[person_id] = @set orig.severe_immunity = true
+    end
+  end
 end
 
 setimmunity!(state::SimState, person_id::Integer, new_immunity::ImmunityState) =
