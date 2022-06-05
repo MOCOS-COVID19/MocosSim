@@ -38,7 +38,7 @@ function make_immunity_table(state::AbstractSimState, level::Real)
 end
 
 straininfectivity(table::StrainInfectivityTable, strain::StrainKind) = table[UInt(strain)]
-immunited(immunity::ImmunityState) = immunity == against_infection
+immunited(immunity::ImmunityState) = immunity != NoImmunity
 
 
 function immunize!(state::SimState, immunization::ImmunizationEvents)::Nothing
