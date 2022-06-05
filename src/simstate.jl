@@ -115,7 +115,7 @@ function setimmunity!(state::SimState, person_id::Integer, new_immunity::Immunit
     end
   end
   if new_immunity == against_severe_progression
-    if orig.infection_immunity
+    if orig.severe_immunity
       state.individuals[person_id] = @set orig.severe_immunity = false
     else
       state.individuals[person_id] = @set orig.severe_immunity = true
