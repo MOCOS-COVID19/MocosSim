@@ -46,7 +46,7 @@ end
 #
 
 function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimParams, event::Event)::Bool
-  if Healthy != subjecthealth(state, event) || Free != subjectfreedom(state, event)
+  if Healthy != subjecthealth(state, event) || Free != subjectfreedom(state, event) || isimmune(state, params, subject(event),true,strainkind(event))
     return false
   end
 
