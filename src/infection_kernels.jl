@@ -31,7 +31,7 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
       subject_id +=1
     end
 
-    if Healthy == health(state, subject_id) || isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
+    if Healthy == health(state, subject_id) #|| isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
       continue
     end
 
@@ -69,8 +69,8 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
   for subject_id in household
     if Healthy != health(state, subject_id)
       continue
-    elseif isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
-      continue
+    # elseif isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
+    #   continue
     elseif subject_id == source_id
       continue
     end
@@ -124,8 +124,8 @@ function enqueue_transmissions!(state::SimState, ::Val{HospitalContact}, source_
 
     if Healthy != health(state, subject_id)
       continue
-    elseif  isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
-      continue
+    # elseif  isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
+    #   continue
     elseif subject_id == source_id # self infection not possible
       continue
     end
@@ -171,8 +171,8 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
 
     if Healthy != health(state, subject_id)
       continue
-    elseif isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
-      continue
+    #elseif isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
+    #  continue
     elseif subject_id == source_id
       continue
     end

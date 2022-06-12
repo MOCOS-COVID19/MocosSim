@@ -74,7 +74,7 @@ function execute!(::Val{OutsideInfectionEvent}, state::SimState, params::SimPara
 end
 
 function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, event::Event)::Bool
-  if Healthy != subjecthealth(state, event) # apparently the subject became already infected in some other way
+  if Healthy != subjecthealth(state, event) || isimmune(state, params, subject(event), immunityof(state, subject_id), strainkind(event)) # apparently the subject became already infected in some other way
     return false
   end
 
