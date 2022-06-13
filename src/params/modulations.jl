@@ -94,6 +94,30 @@ function evalmodulation(f::IncreasingTwoTanhModulations, state::AbstractSimState
   tanh_modulation(fear, f.loc2, f.scale2, modulation1, 1.0)
 end
 
+struct IntervalsModulations <: InfectionModulation
+  weight_detected::Float64
+  weight_deaths::Float64
+  weight_days::Float64
+  interval_values::Vector{Float64}
+  interval_times::Vector{TimePoint}
+
+  IntervalsModulations(;weight_detected::Real=0, weight_deaths::Real=0, weight_days::Real=0, interval_values::Vector{Real}=Float64[1.0], interval_times::Vector{Real}=TimePoint[]) =
+    length(interval_values) == length(interval_times) + 1 ? new(weight_detected, weight_deaths, weight_days, interval_values, interval_times) : error("length of interval_values vector must be one longer than interval_times")
+end
+
+function intervals_modulation(x::Real, interval_values::Vector{Real}, interval_times::Vector{Real})
+  idx = searchsortedlast(insert!(interval_times,1,0.0), x)
+  interval_values[idx]
+end
+
+function evalmodulation(f::IntervalsModulations, state::AbstractSimState, ::AbstractSimParams)::Float64
+  num_days = time(state)
+  num_detected = numdetected(state)
+  num_deaths = numdead(state)
+  fear = num_detected * f.weight_detected + num_deaths * f.weight_deaths + num_days * f.weight_days
+  intervals_modulation(fear, f.interval_values, f.interval_times)
+end
+
 evalmodulation(modulation::Nothing, state::AbstractSimState, params::AbstractSimParams)::Float64 = 1.0
 
 function infectionsuccess(modulation::InfectionModulation, state::AbstractSimState, params::AbstractSimParams, event::Event)::Bool
@@ -128,7 +152,8 @@ const modulations = Dict{String, Type{T} where T}(
     "TanhModulation" => TanhModulation,
     "TwoTanhModulations" => TwoTanhModulations,
     "IncreasingTanhModulation" => IncreasingTanhModulation,
-    "IncreasingTwoTanhModulations" => IncreasingTwoTanhModulations
+    "IncreasingTwoTanhModulations" => IncreasingTwoTanhModulations,
+    "IntervalsModulations" => IntervalsModulations
 )
 
 make_infection_modulation(::Nothing) = nothing
