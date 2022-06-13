@@ -101,11 +101,11 @@ struct IntervalsModulations <: InfectionModulation
   interval_values::Vector{Float64}
   interval_times::Vector{TimePoint}
 
-  IntervalsModulations(;weight_detected::Real=0, weight_deaths::Real=0, weight_days::Real=0, interval_values::Vector{Real}=Float64[1.0], interval_times::Vector{Real}=TimePoint[]) =
+  IntervalsModulations(;weight_detected::Real=0, weight_deaths::Real=0, weight_days::Real=0, interval_values::Vector{Float64}=Float64[1.0], interval_times::Vector{TimePoint}=TimePoint[]) =
     length(interval_values) == length(interval_times) + 1 ? new(weight_detected, weight_deaths, weight_days, interval_values, interval_times) : error("length of interval_values vector must be one longer than interval_times")
 end
 
-function intervals_modulation(x::Real, interval_values::Vector{Real}, interval_times::Vector{Real})
+function intervals_modulation(x::Real, interval_values::Vector{Float64}, interval_times::Vector{TimePoint})
   idx = searchsortedlast(insert!(interval_times,1,0.0), x)
   interval_values[idx]
 end
