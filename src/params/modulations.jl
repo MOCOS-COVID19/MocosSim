@@ -106,7 +106,9 @@ struct IntervalsModulations <: InfectionModulation
 end
 
 function intervals_modulation(x::Real, interval_values::Vector{Float64}, interval_times::Vector{TimePoint})
-  idx = searchsortedlast(insert!(interval_times, 1, 0.0), x)
+  @assert length(interval_values) == length(interval_times) - 1
+  times = interval_times
+  idx = searchsortedlast(insert!(times, 1, 0.0), x)
   @assert idx <= length(interval_values)
   interval_values[idx]
 end
