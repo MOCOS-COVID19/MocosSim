@@ -48,6 +48,9 @@ function immunize!(state::SimState, immunization::ImmunizationEvents)::Nothing
   enqueued = 0
   for i in 1:N
     if immunization.immunity_uptake_times[i] <= current_time
+      if immunization.lost_immunity_times[i] <= current_time
+        continue
+      end
       setimmunity!(state, immunization.subjects[i], immunization.immunity_types[i])
       push!(state.queue,
         Event( Val(ImmunizationEvent),
