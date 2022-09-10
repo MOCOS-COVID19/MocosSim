@@ -71,6 +71,7 @@ function sample_progression(rng::AbstractRNG, progression_data::ProgressionParam
     age,
     gender,
     immunity,
+    strain,
     progression_data.dist_incubation_time,
     progression_data.dist_symptom_onset_time,
     progression_data.dist_hospitalization_time,
@@ -78,12 +79,11 @@ function sample_progression(rng::AbstractRNG, progression_data::ProgressionParam
     progression_data.dist_death_time,
     progression_data.dist_severity_by_age,
     progression_data.hospitalization_time_ratio
-    
   )
 end
 
 
-@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, immunity::Bool,
+@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, immunity::Bool, strain::StrainKind,
     dist_incubation,
     dist_symptom_onset,
     dist_hospitalization,
@@ -99,8 +99,8 @@ end
   severe_symptoms_time = missing
   recovery_time = missing
   death_time = missing
-
-  incubation_time = rand(rng, dist_incubation)
+  strain_int = strain |> Int8
+  incubation_time = rand(rng, dist_incubation) * incubation_ratio[strain_int]
 
   if (severity==Mild) || (severity==Severe) || (severity==Critical)
     mild_symptoms_time = incubation_time + rand(rng, dist_symptom_onset)
