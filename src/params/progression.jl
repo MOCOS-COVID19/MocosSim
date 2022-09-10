@@ -1,5 +1,6 @@
 struct ProgressionParams
   # the distribution are subject to change
+  incubation_ratio::Vector{Float64}
   dist_incubation_time::LogNormal{Float64}
   dist_symptom_onset_time::Gamma{Float64}
   dist_hospitalization_time::Gamma{Float64}
@@ -9,8 +10,9 @@ struct ProgressionParams
   hospitalization_time_ratio::Float64
 end
 
-function make_progression_params(hospitalization_time_ratio::Float64, hospitalization_multiplier::Float64, death_multiplier::Float64)
+function make_progression_params(hospitalization_time_ratio::Float64, hospitalization_multiplier::Float64, death_multiplier::Float64, incubation_ratio::Vector{Float64})
   #this data needs updating
+  incubation_ratio = incubation_ratio
   dist_incubation_time = LogNormal(1.23028082387, 0.47862064526)
   dist_symptom_onset_time = Gamma(0.8738003969079596, 2.9148873266517685)
   dist_hospitalization_time =  Gamma(1.1765988120148885, 2.6664347368236787)
@@ -18,6 +20,7 @@ function make_progression_params(hospitalization_time_ratio::Float64, hospitaliz
   dist_death_time = LogNormal(1.6968381137317683, 1.2051253249941534)
   dist_severity_by_age = make_dist_severity_by_age(hospitalization_men_probs, hospitalization_women_probs, hospitalization_multiplier, death_multiplier)
   ProgressionParams(
+    incubation_ratio,
     dist_incubation_time,
     dist_symptom_onset_time,
     dist_hospitalization_time,
@@ -72,6 +75,7 @@ function sample_progression(rng::AbstractRNG, progression_data::ProgressionParam
     gender,
     immunity,
     strain,
+    progression_data.incubation_ratio,
     progression_data.dist_incubation_time,
     progression_data.dist_symptom_onset_time,
     progression_data.dist_hospitalization_time,
@@ -83,7 +87,7 @@ function sample_progression(rng::AbstractRNG, progression_data::ProgressionParam
 end
 
 
-@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, immunity::Bool, strain::StrainKind,
+@inline function sample_progression(rng::AbstractRNG, age::Real, gender::Bool, immunity::Bool, strain::StrainKind, incubation_ratio::AbstractVector{T} where T <: Real,
     dist_incubation,
     dist_symptom_onset,
     dist_hospitalization,
@@ -157,7 +161,7 @@ function resample!(
   dist_severity_by_age)
 
   for i in 1:length(ages)
-    progressions[i] = sample_progression(rng, ages[i], genders[i], true,
+    progressions[i] = sample_progression(rng, ages[i], genders[i], true, NullStrain,
       dist_incubation_time,
       dist_symptom_onset_time,
       dist_hospitalization_time,

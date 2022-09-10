@@ -111,13 +111,14 @@ function load_params(
   hospitalization_time_ratio::Float64=1.0,
   hospitalization_multiplier::Float64=1.0, 
   death_multiplier::Float64=1.0,
+  incubation_ratio::Vector{Float64}=ones(Float64,NUM_STRAINS)
 
   kwargs...
   )
 
   individuals_df::DataFrame = population
 
-  progression_params::ProgressionParams = make_progression_params(hospitalization_time_ratio, hospitalization_multiplier, death_multiplier)
+  progression_params::ProgressionParams = make_progression_params(hospitalization_time_ratio, hospitalization_multiplier, death_multiplier, incubation_ratio)
 
   infection_modulation = make_infection_modulation(infection_modulation_name; infection_modulation_params...)
   mild_detection_modulation = make_infection_modulation(mild_detection_modulation_name; mild_detection_modulation_params...)
