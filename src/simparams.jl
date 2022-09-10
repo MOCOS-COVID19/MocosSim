@@ -111,7 +111,7 @@ function load_params(
   hospitalization_time_ratio::Float64=1.0,
   hospitalization_multiplier::Float64=1.0, 
   death_multiplier::Float64=1.0,
-  incubation_ratio::Vector{Float64}=ones(Float64,NUM_STRAINS)
+  incubation_ratio::Vector{Float64}=ones(Float64,NUM_STRAINS),
 
   kwargs...
   )
