@@ -141,7 +141,13 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
   if params.age_coupling_params === nothing
     return
   end
-
+  age_coupling_params = params.age_coupling_params
+  if params.age_coupling_params_new !== nothing && params.age_coupling_switch_time !== nothing
+    switch_time::TimePoint = params.age_coupling_switch_time |> TimePoint
+    if state.time >= switch_time
+      age_coupling_params = params.age_coupling_params_new
+    end
+  end
   progression = progressionof(state, source_id)
 
   start_time = progression.incubation_time
@@ -154,7 +160,7 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
   strain = strainof(state, source_id)
 
   total_infection_rate = (end_time - start_time) * straininfectivity(params, strain)
-  total_infection_rate *= sourceweightof(params.age_coupling_params, source_id)
+  total_infection_rate *= sourceweightof(age_coupling_params, source_id)
   total_infection_rate *= spreading(params, source_id)
 
   num_infections = rand(state.rng, Poisson(total_infection_rate))
@@ -167,7 +173,7 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
   time_dist = Uniform(state.time, end_time - start_time + state.time) # in global time reference frame
 
   for _ in 1:num_infections
-    subject_id = sample(state.rng, params.age_coupling_params.coupling, source_id)
+    subject_id = sample(state.rng, age_coupling_params.coupling, source_id)
 
     if Healthy != health(state, subject_id)
       continue

@@ -36,6 +36,8 @@ struct SimParams <: AbstractSimParams
   constant_kernel_param::Float32
   household_kernel_param::Float32
   age_coupling_params::Union{Nothing, AgeCouplingParams} # nothing if kernel not active
+  age_coupling_params_new::Union{Nothing, AgeCouplingParams} # nothing if kernel not active
+  age_coupling_switch_time::Union{Nothing, Real}
   hospital_kernel_params::Union{Nothing, HospitalInfectionParams}  # nothing if hospital kernel not active
 
   hospital_detections::Bool
@@ -168,6 +170,12 @@ function make_params(
   age_coupling_weights::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
   age_coupling_use_genders::Bool=false,
 
+  age_coupling_param_new::Union{Nothing, Real}=nothing,
+  age_coupling_thresholds_new::Union{Nothing, AbstractArray{T} where T<:Real}=nothing,
+  age_coupling_weights_new::Union{Nothing, AbstractMatrix{T} where T<:Real}=nothing,
+  age_coupling_use_genders_new::Bool=false,
+  age_coupling_switch_time::Union{Nothing, Real}=nothing,
+
   screening_params::Union{Nothing,ScreeningParams}=nothing,
   household_params::Union{Nothing,HouseholdParams}=nothing,
 
@@ -207,6 +215,20 @@ function make_params(
         age_coupling_param
         )
     else error("age couplig params not fully given")
+    end
+
+    age_coupling_kernel_params_new =
+    if nothing === age_coupling_weights_new && nothing === age_coupling_thresholds_new && nothing === age_coupling_param_new; nothing
+    elseif age_coupling_weights_new !== nothing && age_coupling_thresholds_new !== nothing
+      @assert minimum(individuals_df.age) >= 0
+      @assert maximum(individuals_df.age) * (age_coupling_use_genders+1) < typemax(GroupIdx)
+      AgeCouplingParams(
+        individuals_df.age,
+        age_coupling_use_genders_new === nothing ? individuals_df.gender : nothing,
+        age_coupling_thresholds_new, age_coupling_weights_new,
+        age_coupling_param_new
+        )
+    else error("age couplig params_new not fully given")
     end
 
   hospital_kernel_params =
@@ -257,6 +279,8 @@ function make_params(
     constant_kernel_param,
     household_kernel_param,
     age_coupling_kernel_params,
+    age_coupling_kernel_params_new,
+    age_coupling_switch_time,
     hospital_kernel_params,
 
     hospital_detections,
