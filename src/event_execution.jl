@@ -193,7 +193,7 @@ function execute!(::Val{MildSymptomsEvent}, state::SimState, params::SimParams, 
     push!(state.queue, Event(Val(RecoveryEvent), infection_time + progression.recovery_time, subject_id))
   end
 
-  push!(state.queue, Event(Val(HomeTreatmentEvent), time(event), subject_id), immediate=true) #immediately
+  # push!(state.queue, Event(Val(HomeTreatmentEvent), time(event), subject_id), immediate=true) #immediately
 
   detectioncheck!(state, params, subject_id)
 
