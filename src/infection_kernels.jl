@@ -2,8 +2,7 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
   progression = progressionof(state, source_id)
 
   start_time = progression.incubation_time
-  end_time =  if      !ismissing(progression.mild_symptoms_time);   progression.mild_symptoms_time
-              elseif  !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
+  end_time =  if  !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
               elseif  !ismissing(progression.recovery_time);        progression.recovery_time
               else    error("no recovery nor symptoms time defined")
               end
@@ -145,8 +144,7 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
   progression = progressionof(state, source_id)
 
   start_time = progression.incubation_time
-  end_time =  if      !ismissing(progression.mild_symptoms_time);   progression.mild_symptoms_time
-              elseif  !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
+  end_time =  if  !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
               elseif  !ismissing(progression.recovery_time);        progression.recovery_time
               else    error("no recovery nor symptoms time defined")
               end
