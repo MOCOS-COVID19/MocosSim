@@ -309,7 +309,7 @@ function execute!(::Val{DetectionEvent}, state::SimState, params::SimParams, eve
     return false
   end
   setdetected!(state, subject_id, Detected)
-  quarantinehousehold!(state, params, subject_id, include_subject=true)
+  quarantinehousehold!(state, params, subject_id, include_subject=false)
   if FromQuarantineDetection !== detection_kind
     tracehousehold!(state, params, subject_id, trace_household_connections=true)
   end
