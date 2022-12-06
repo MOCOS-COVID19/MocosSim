@@ -31,7 +31,7 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
       subject_id +=1
     end
 
-    if Healthy == health(state, subject_id) #|| isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
+    if Healthy != health(state, subject_id) #|| isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
       continue
     end
 
