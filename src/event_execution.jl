@@ -79,7 +79,7 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
   end
 
   source_health = sourcehealth(state, event)
-  @assert contactkind(event)==HospitalContact || source_health ∉ SA[Healthy, Incubating, SevereSymptoms, CriticalSymptoms, Dead, Recovered] "infection time exceeds infectability time frame, source is now in state $source_health, the event is $event source progressions are $(progressionof(state, source(event)))"
+  @assert contactkind(event)==HospitalContact || source_health ∉ SA[Healthy, Incubating, SevereSymptoms, CriticalSymptoms, Dead] "infection time exceeds infectability time frame, source is now in state $source_health, the event is $event source progressions are $(progressionof(state, source(event)))"
 
   # the transmission events are queued in advace, therefore it might be the case that it can not be realized
   # for the transmission to happen both source and subject must be free or both must be staying at home in case
@@ -89,7 +89,7 @@ function execute!(::Val{TransmissionEvent}, state::SimState, params::SimParams, 
   source_freedom = sourcefreedom(state, event)
 
   @assert subject_freedom ∉ SA[HomeTreatment, Hospitalized] "a healthy subject should not be in HomeTreatment or Hospital"
-  @assert contactkind(event) == HospitalContact || source_freedom ∉ SA[Hospitalized, Released]
+  @assert contactkind(event) == HospitalContact || source_freedom != Hospitalized
 
   # household contact conditions
   # if it is an infection outside household and either source or subject are closed in home the event can not happen
@@ -205,33 +205,53 @@ function execute!(::Val{SevereSymptomsEvent}, state::SimState, params::SimParams
 
   subject_id = subject(event)
 
+  push!(state.queue, Event(Val(GoHospitalEvent), time(event), subject_id), immediate=true)
+
   progression = progressionof(state, subject_id)
 
-  #push!(state.queue, RecoveryEvent(time(event)+14, subject(event)))
-  event = Event(Val(GoHospitalEvent), time(event), subject(event))
-  push!(state.queue, event, immediate=true)  # immediately
+  recovery_time = progression.recovery_time
+  death_time = progression.death_time
+
+  @assert ismissing(recovery_time) ⊻ ismissing(death_time)
+
+  if !ismissing(death_time)
+    @assert progression.severe_symptoms_time <= death_time
+    event_time = time(event) + (death_time - progression.severe_symptoms_time)
+    push!(state.queue, Event(Val(DeathEvent), event_time, subject(event)))
+  else #if !ismissing(recovery_time)
+    @assert progression.severe_symptoms_time < recovery_time
+    event_time = time(event) + (recovery_time - progression.severe_symptoms_time)
+    push!(state.queue, Event(Val(RecoveryEvent), event_time, subject(event)))
+  end
 
   return true
 end
 
 function execute!(::Val{RecoveryEvent}, state::SimState, params::SimParams, event::Event)::Bool
-  @assert subjecthealth(state, event) ∉ SA[Recovered, Dead]
+  @assert subjecthealth(state, event) ∉ SA[Healthy, Dead]
 
-  setsubjecthealth!(state, event, Recovered)
+  setsubjecthealth!(state, event, Healthy)
   freedom_status = subjectfreedom(state, event)
   if Hospitalized == freedom_status
-    push!(state.queue, Event(Val(ReleasedEvent), time(event), subject(event)))
+    push!(state.queue, Event(Val(ReleasedEvent), time(event), subject(event)), immediate=true)
   elseif HomeTreatment == freedom_status
-    push!(state.queue, Event(Val(HomeTreatmentSuccessEvent), time(event), subject(event)))
+    push!(state.queue, Event(Val(HomeTreatmentSuccessEvent), time(event), subject(event)), immediate=true)
   end
+  clearprogression!(state, subject(event))
   return true
 end
 
 function execute!(::Val{DeathEvent}, state::SimState, params::SimParams, event::Event)::Bool
-  @assert subjecthealth(state, event) ∉ SA[Recovered, Dead]
+  #@assert subjecthealth(state, event) ∉ SA[Healthy, Dead]
+  @assert subjecthealth(state, event) ∈ SA[SevereSymptoms, CriticalSymptoms]
+  # TODO: perhaps this should be enough if we distinguished between Critical and Severe
+  #@assert subjecthealth(state, event) == CriticalSymptoms
 
   setsubjecthealth!(state, event, Dead)
-  push!(state.queue, Event(Val(ReleasedEvent), time(event), subject(event)))
+  setsubjectfreedom!(state, event, Free)
+
+  quarantine_cancel!(state, subject(event))
+  push!(state.queue, Event(Val(ReleasedEvent), time(event), subject(event)), immediate=true)
   return true
 end
 
@@ -254,7 +274,7 @@ function execute!(::Val{HomeTreatmentEvent}, state::SimState, params::SimParams,
 end
 
 function execute!(::Val{HomeTreatmentSuccessEvent}, state::SimState, params::SimParams, event::Event)::Bool
-  @assert Recovered == subjecthealth(state, event)
+  @assert Healthy == subjecthealth(state, event)
   @assert HomeTreatment == subjectfreedom(state, event) "subject $(subject(event)) was not in HomeTreatment but in $(subjectfreedom(state, event))"
   if isquarantined(state, subject(event))
     setfreedom!(state, subject(event), HomeQuarantine)
@@ -293,8 +313,8 @@ function execute!(::Val{GoHospitalEvent}, state::SimState, params::SimParams, ev
 end
 
 function execute!(::Val{ReleasedEvent}, state::SimState, params::SimParams, event::Event)::Bool
-  @assert subjecthealth(state, event) in SA[Dead, Recovered]
-  setfreedom!(state, subject(event), Released)
+  @assert subjecthealth(state, event) in SA[Dead, Healthy]
+  setfreedom!(state, subject(event), Free)
   return true
 end
 
@@ -344,12 +364,13 @@ end
 
 function execute!(::Val{QuarantinedEvent}, state::SimState, params::SimParams, event::Event)::Bool
   subject_id = subject(event)
+  health_state = health(state, subject_id)
   freedom_state = freedom(state, subject_id)
 
   is_already_quarantined = isquarantined(state, subject_id)
 
-  if Hospitalized == freedom_state || Released == freedom_state
-    @assert !is_already_quarantined "the quarantine should be lifted just before hospitalization"
+  if Hospitalized == freedom_state || Dead == health_state
+    @assert !is_already_quarantined "the quarantine should have been lifted just before hospitalization"
     return false
   end
 
@@ -372,8 +393,12 @@ function execute!(::Val{QuarantinedEvent}, state::SimState, params::SimParams, e
     setdetected!(state, subject_id, UnderObservation)
   end
 
-  quarantine_advance!(state, subject_id, +1)  # increase quarantine level
-  push!(state.queue, Event(Val(QuarantineEndEvent), time(event)+params.quarantine_length, subject_id))
+  # we save only full days
+  quarantine_end_time = ceil(TimeDay, time(event) + params.quarantine_length)
+  # start or prolong the quarantine
+  quarantine_prolong!(state, subject_id, quarantine_end_time);
+  # add the matching end that can detect if it is the right one by matching the time
+  push!(state.queue, Event(Val(QuarantineEndEvent), quarantine_end_time, subject_id))
 
   return !is_already_quarantined
 end
@@ -382,27 +407,29 @@ function execute!(::Val{QuarantineEndEvent}, state::SimState, params::SimParams,
   subject_id = subject(event)
   @assert Undetected != detected(state, subject_id) "subject $subject_id must be at least under observation since the quarantine is ending"
 
+  subject_health = health(state, subject_id)
   subject_freedom = freedom(state, subject_id)
 
-  if  (Hospitalized == subject_freedom) || (Released == subject_freedom)
+  if Hospitalized == subject_freedom || Dead == subject_health
     # false event as quarantine should have been removed before hospitalization
-    @assert !isquarantined(state, subject_id) "subject in state $subject_freedom detected in quarantine"
+    @assert !isquarantined(state, subject_id) "subject  $subject_id in state $subject_freedom detected in quarantine state = $(individualstate(state, subject_id)), progression $(progressionof(state, subject_id))"
     return false
   end
 
-  quarantine_advance!(state, subject_id, -1)  # reduce quarantine level
-  if isquarantined(state, subject_id)
-    return false  # ignore event, the quarantine should last longer
+  if time(event) != quarantine_end(state, subject_id)
+    # the time does not match, this is not the final QuarantineEndEvent
+    # or there were prolongations that end on the same day
+    # ignore event, the quarantine was prolonged and should continue
+    return false
   end
-
-  subject_health = health(state, subject_id)
+  quarantine_cancel!(state, subject_id)
 
   if Infectious == subject_health || MildSymptoms == subject_health
     quarantinehousehold!(state, params, subject_id, include_subject=true, extension=true)
     return false
   end
 
-  @assert subject_health in SA[Healthy, Incubating, Recovered] "subject $subject_id must be in hospital hence not quarantined state = $(individualstate(state, subject_id))"
+  @assert subject_health in SA[Healthy, Incubating] "subject $subject_id must be in hospital hence not quarantined state = $(individualstate(state, subject_id))"
   setfreedom!(state, subject_id, Free)
 
   return true
@@ -437,8 +464,10 @@ function quarantinehousehold!(state::SimState, params::SimParams, subject_id::In
     end
 
     member_freedom = freedom(state, member)
+    member_health = health(state, member)
 
-    if (Hospitalized == member_freedom) || (Released == member_freedom)
+    #TODO do not quarantine those who have recovered recently or are immune
+    if Dead == member_health || Hospitalized == member_freedom
       continue
     end
     @assert member_freedom in SA[Free, HomeTreatment, HomeQuarantine]
@@ -448,18 +477,33 @@ function quarantinehousehold!(state::SimState, params::SimParams, subject_id::In
 end
 
 function tracehousehold!(state::SimState, params::SimParams, subject_id::Integer; trace_household_connections::Bool)
+  #@info "tracing household of $subject_id"
   for member in householdof(params, subject_id)
-     backtrace!(state, params, member, trace_household_connections=trace_household_connections)
-     forwardtrace!(state, params, member, trace_household_connections=trace_household_connections)
+    #@info "tracing $member"
+    backtrace!(state, params, member, trace_household_connections=trace_household_connections)
+    forwardtrace!(state, params, member, trace_household_connections=trace_household_connections)
   end
   nothing
 end
 
+function issuitablefortracing(state::SimState, params::SimParams, infection::Event)::Bool
+  if NoContact == contactkind(infection)
+    return false
+  end
+
+  time_since_infection = time(state) - time(infection)
+  # TODO: make time settable like:
+  # max_tracking_time = params.max_tracking_time
+  max_tracking_time = 14;
+  max_tracking_time < time_since_infection
+end
 
 function backtrace!(state::SimState, params::SimParams, person_id::Integer; trace_household_connections::Bool)
-  current_time = time(state)
-
-  event = backwardinfection(state, person_id)
+  #@info "backtracing" person_id state.individuals[person_id]
+  event = recentbackwardinfection(state, person_id)
+  if !issuitablefortracing(state, params, event)
+    return
+  end
   backward_id = source(event)
 
   if NoContact == contactkind(event) || OutsideContact == contactkind(event)
@@ -476,6 +520,8 @@ function backtrace!(state::SimState, params::SimParams, person_id::Integer; trac
     return
   end
 
+  current_time = time(state)
+
   if uses_phone_tracing(params, person_id) &&
       uses_phone_tracing(params, backward_id) &&
       rand(state.rng) < params.phone_tracing_params.detection_prob
@@ -488,19 +534,22 @@ function backtrace!(state::SimState, params::SimParams, person_id::Integer; trac
   nothing
 end
 
+
 function forwardtrace!(state::SimState, params::SimParams, person_id::Integer; trace_household_connections::Bool)
   current_time = time(state)
 
   # handle all outgoing infections
-  for infection in forwardinfections(state, person_id)
-
+  for infection in recentforwardinfectionsof(state, person_id)
+    if !issuitablefortracing(state, params, infection)
+      continue
+    end
     contact_kind = contactkind(infection)
     @assert contact_kind ∉ SA[OutsideContact, NoContact]
 
     forward_id = subject(infection)
 
-    health_state = health(state, forward_id)
-    @assert Healthy != health_state
+    #health_state = health(state, forward_id)
+    #@assert Healthy != health_state
 
     if !trace_household_connections && (HouseholdContact == contact_kind)
       continue

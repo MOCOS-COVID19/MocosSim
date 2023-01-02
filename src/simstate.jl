@@ -57,8 +57,6 @@ individualstate(state::SimState, person_id::Integer) = state.individuals[person_
 health(state::SimState, person_id::Integer)::HealthState = state.individuals[person_id].health
 freedom(state::SimState, person_id::Integer)::FreedomState = state.individuals[person_id].freedom
 
-quarantine_level(state::SimState, person_id::Integer) = state.individuals[person_id].quarantine_level
-isquarantined(state::SimState, person_id::Integer)::Bool = quarantine_level(state, person_id) != 0
 detected(state::SimState, person_id::Integer)::DetectionStatus = state.individuals[person_id].detected
 isdetected(state::SimState, person_id::Integer)::Bool = (Detected == detected(state, person_id))
 
@@ -68,12 +66,12 @@ subjectfreedom(state::SimState, event::Event)::FreedomState = freedom(state, sub
 sourcehealth(state::SimState, event::Event)::HealthState = health(state, source(event))
 sourcefreedom(state::SimState, event::Event)::FreedomState = freedom(state, source(event))
 
-strainof(state::SimState, person_id::Integer) = strainof(state.forest, person_id)
+recentstrainof(state::SimState, person_id::Integer) = recentstrainof(state.forest, person_id)
 immunityof(state::SimState, person_id::Integer)::ImmunityState = state.individuals[person_id].immunity
 immunizationday(state::SimState, person_id::Integer) = state.individuals[person_id].immunization_day
 timesinceimmunization(state::SimState, person_id::Integer)::TimePoint = time(state) - TimePoint(immunizationday(state, person_id))
 
-function progressionof(state::SimState, person_id::Integer)
+function progressionof(state::SimState, person_id::Integer)::Progression
   progression = state.progressions[person_id]
   @assert progression.severity !== UndefinedSeverity
   progression
@@ -81,12 +79,12 @@ end
 numdetected(state::SimState) = numdetected(state.stats)
 numdead(state::SimState) = numdead(state.stats)
 
-forwardinfections(state::SimState, person_id::Integer) = forwardinfections(state.forest, person_id)
-backwardinfection(state::SimState, person_id::Integer) = backwardinfection(state.forest, person_id)
+recentforwardinfectionsof(state::SimState, person_id::Integer) = recentforwardinfectionsof(state.forest, person_id)
+recentbackwardinfection(state::SimState, person_id::Integer) = recentbackwardinfectionof(state.forest, person_id)
 
 function sethealth!(state::SimState, person_id::Integer, new_health::HealthState)
   orig = state.individuals[person_id]
-  @assert orig.health <= new_health
+  @assert orig.health <= new_health || Healthy == new_health
   state.individuals[person_id] = @set orig.health = new_health
   nothing
 end
@@ -112,25 +110,45 @@ end
 setimmunity!(state::SimState, person_id::Integer, new_immunity::ImmunityState) =
   setimmunity!(state, person_id, new_immunity, time(state))
 
+function clearprogression!(state::SimState, person_id::Integer)
+  @assert state.progressions[person_id].severity != UndefinedSeverity
+  state.progressions[person_id] = Progression()
+  nothing
+end
+
 function setprogression!(state::SimState, person_id::Integer, progression::Progression)
   @assert state.progressions[person_id].severity == UndefinedSeverity
   state.progressions[person_id] = progression
   nothing
 end
 
-function quarantine_advance!(state::SimState, person_id::Integer, adv_val::Integer)
+#quarantine_level(state::SimState, person_id::Integer) = state.individuals[person_id].quarantine_level
+#isquarantined(state::SimState, person_id::Integer)::Bool = quarantine_level(state, person_id) != 0
+
+#function quarantine_advance!(state::SimState, person_id::Integer, adv_val::Integer)
+#  orig = state.individuals[person_id]
+#  if adv_val >= 0
+#    state.individuals[person_id] = @set orig.quarantine_level = orig.quarantine_level+adv_val
+#  else
+#    state.individuals[person_id] = @set orig.quarantine_level = orig.quarantine_level-(-adv_val)
+#  end
+#  nothing
+#end
+quarantine_end(state::SimState, person_id::Integer) = TimePoint(state.individuals[person_id].quarantine_end)
+isquarantined(state::SimState, person_id::Integer)::Bool = time(state) < quarantine_end(state, person_id)
+
+function quarantine_prolong!(state::SimState, person_id::Integer, new_time::Real)
   orig = state.individuals[person_id]
-  if adv_val >= 0
-    state.individuals[person_id] = @set orig.quarantine_level = orig.quarantine_level+adv_val
-  else
-    state.individuals[person_id] = @set orig.quarantine_level = orig.quarantine_level-(-adv_val)
-  end
+  new_time = ceil(TimeDay, new_time)
+  @assert orig.quarantine_end <= new_time
+  state.individuals[person_id] = @set orig.quarantine_end = new_time;
   nothing
 end
 
 function quarantine_cancel!(state::SimState, person_id::Integer)
   orig = state.individuals[person_id]
-  state.individuals[person_id] = @set orig.quarantine_level = 0
+  #state.individuals[person_id] = @set orig.quarantine_level = 0
+  state.individuals[person_id] = @set orig.quarantine_end = 0
   nothing
 end
 

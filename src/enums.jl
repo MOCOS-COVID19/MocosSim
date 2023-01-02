@@ -1,14 +1,52 @@
-@enum Severity::UInt8 UndefinedSeverity=0 Asymptomatic=1 Mild Severe Critical
+@enum Severity::UInt8 begin
+  UndefinedSeverity=0
+  Asymptomatic=1
+  Mild
+  Severe
+  Critical
+end
 
-@enum HealthState::UInt8 Healthy Incubating Infectious MildSymptoms SevereSymptoms CriticalSymptoms Recovered Dead # 3 bits
+@enum HealthState::UInt8 begin # 3 bits
+  Healthy
+  Incubating
+  Infectious
+  MildSymptoms
+  SevereSymptoms
+  CriticalSymptoms
+  # Recovered
+  Dead
+end
 
-@enum FreedomState::UInt8 Free HomeQuarantine HomeTreatment Hospitalized Released # 3 bits
+@enum FreedomState::UInt8 begin # 3 bits
+  Free
+  HomeQuarantine
+  HomeTreatment
+  Hospitalized
+  # Released
+end
 
-@enum DetectionStatus::UInt8 Undetected UnderObservation TestPending Detected #2 bits
+@enum DetectionStatus::UInt8 begin #2 bits
+  Undetected
+  UnderObservation
+  TestPending
+  Detected
+end
 
-@enum ContactKind::UInt8 NoContact=0 HouseholdContact HospitalContact AgeCouplingContact ConstantKernelContact OutsideContact # 3 bits
+@enum ContactKind::UInt8 begin  # 3 bits
+  NoContact=0
+  HouseholdContact
+  HospitalContact
+  AgeCouplingContact
+  ConstantKernelContact
+  OutsideContact
+end
 
-@enum DetectionKind::UInt8 NoDetection=0 OutsideQuarantineDetection=1 FromQuarantineDetection FromTracingDetection
+@enum DetectionKind::UInt8 begin
+  NoDetection=0
+  OutsideQuarantineDetection=1
+  FromQuarantineDetection
+  FromTracingDetection
+end
 
 @enum TracingKind::UInt8 begin
   NotTraced = 0
