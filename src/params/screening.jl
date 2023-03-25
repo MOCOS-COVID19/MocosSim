@@ -4,6 +4,8 @@ Base.@kwdef struct ScreeningParams
   period::Float64 = 7.0
   lower_bound_age::Int64 = 8
   upper_bound_age::Int64 = 16
+  interval_periods::Vector{Float64} = Float64[]
+  interval_times::Vector{TimePoint} = TimePoint[]
 end
 
 function screening!(state::AbstractSimState, params::AbstractSimParams, event::Event)
@@ -35,8 +37,28 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
 end
 
 function add_screening!(state::AbstractSimState, params::AbstractSimParams, time_limit::TimePoint=typemax(TimePoint))
-  for screening_time in params.screening_params.start_time:params.screening_params.period:time_limit
-    event = Event(Val(ScreeningEvent), screening_time)
-    push!(state.queue, event)
+  if length(params.screening_params.interval_times) == 0
+    for screening_time in params.screening_params.start_time:params.screening_params.period:time_limit
+      event = Event(Val(ScreeningEvent), screening_time)
+      push!(state.queue, event)
+    end
+  else
+    t = params.screening_params.interval_times
+    periods = params.screening_params.interval_periods
+    @assert length(t) == length(periods)
+    append!(t, time_limit)
+    for index in 1 : length(t) - 1
+      last_elem = missing
+      for ti in t[i] : periods[i] : t[i + 1]
+        last_elem = ti
+        event = Event(Val(ScreeningEvent), ti)
+        push!(state.queue, event)
+      end
+      if !ismissing(last_elem)
+        if i < length(t) - 1
+          t[i + 1] = last_elem + periods[i + 1]
+        end
+      end
+    end
   end
 end

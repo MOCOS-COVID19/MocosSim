@@ -3,6 +3,8 @@ using Distributions
 #using FunctionWrappers
 
 const Age=UInt8
+const Class=UInt16
+const School=UInt16
 const ImmunityRand = Normed{UInt32, 32}
 
 abstract type AbstractSimParams end
@@ -27,6 +29,9 @@ struct SimParams <: AbstractSimParams
   household_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}  # (i1,i2) where i1 and i2 are the indices of first and last member of the household
 
   ages::Vector{Age}
+  classes::Vector{Class}
+  schools::Vector{School}
+  attending_schools::BitVector
   genders::BitVector
   immunity_rand::Vector{ImmunityRand}
 
@@ -35,6 +40,9 @@ struct SimParams <: AbstractSimParams
 
   constant_kernel_param::Float32
   household_kernel_param::Float32
+  class_kernel_param::Float32
+  school_kernel_param::Float32
+
   age_coupling_params::Union{Nothing, AgeCouplingParams} # nothing if kernel not active
   hospital_kernel_params::Union{Nothing, HospitalInfectionParams}  # nothing if hospital kernel not active
 
@@ -71,6 +79,9 @@ straininfectivity(params::SimParams, strain::StrainKind) = straininfectivity(par
 isimmune(state::SimState, params::SimParams, subject_id::Integer, immunity::Bool, strain::StrainKind)::Bool = state.individuals[subject_id].infection_immunity
 
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
+school(params::SimParams, person_id::Integer) = params.schools[person_id]
+class(params::SimParams, person_id::Integer) = params.classes[person_id]
+isattendingschool(params::SimParams, person_id::Integer) = params.attending_schools[person_id]
 age(params::SimParams, person_id::Integer) = params.ages[person_id]
 gender(params::SimParams, person_id::Integer) = params.genders[person_id]
 
@@ -148,6 +159,8 @@ function make_params(
 
   constant_kernel_param::Float64=1.0,
   household_kernel_param::Float64=1.0,
+  class_kernel_param::Float64=0.0,
+  school_kernel_param::Float64=0.0,
 
   hospital_detections::Bool=true,
   mild_detection_prob::Float64=0.0,
@@ -247,6 +260,9 @@ function make_params(
   params = SimParams(
     household_ptrs,
     individuals_df.age,
+    individuals_df.class_index,
+    individuals_df.school_index,
+    individuals_df.attending_school,
     individuals_df.gender,
     reinterpret(ImmunityRand, rand(rng, UInt32, num_individuals)),
 
@@ -255,6 +271,10 @@ function make_params(
 
     constant_kernel_param,
     household_kernel_param,
+
+    class_kernel_param,
+    school_kernel_param,
+
     age_coupling_kernel_params,
     hospital_kernel_params,
 
@@ -289,6 +309,8 @@ function saveparams(dict, p::SimParams)
   dict["num_individuals"] = numindividuals(p)
   dict["constant/kernel_param"] = p.constant_kernel_param
   dict["household/kernel_param"] = p.household_kernel_param
+  dict["class/kernel_param"] = p.class_kernel_param
+  dict["school/kernel_param"] = p.school_kernel_param
   dict["quarantine/duration"] = p.quarantine_length
   dict["detections/hospital"] = p.hospital_detections
   dict["detections/mild"] = p.mild_detection_prob
