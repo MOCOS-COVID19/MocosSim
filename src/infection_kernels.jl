@@ -183,3 +183,119 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
   end
   nothing
 end
+
+function enqueue_transmissions!(state::SimState, ::Val{ClassContact}, source_id::Integer, params::SimParams)
+  class = classof(params, source_id)
+
+  progression = progressionof(state, source_id)
+
+  start_time = progression.incubation_time
+  end_time =  if      !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
+              elseif  !ismissing(progression.recovery_time);        progression.recovery_time
+              else    error("no recovery nor severe symptoms time defined")
+              end
+
+  multiplier = 1.0
+  if length(params.household_params.holidays_start_stop) > 0
+    hss = params.household_params.holidays_start_stop
+    start_time2 = earliest_noholiday_from(start_time, hss)
+    end_time2 = latest_noholiday_before(end_time, hss)
+    if end_time2 <= start_time2
+      return nothing
+    end
+    multiplier = (end_time2 - start_time2) / (end_time - start_time)
+    start_time = start_time2
+    end_time = end_time2
+  end
+
+  max_time = time(state) - start_time + end_time
+
+  strain = strainof(state, source_id)
+
+  mean_infection_time = (length(class)-1) / (multiplier * params.class_kernel_param)
+  mean_infection_time /= straininfectivity(params, strain)
+  time_dist = Exponential(mean_infection_time)
+
+  for subject_id in class
+    if Healthy != health(state, subject_id)
+      continue
+    # elseif isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
+    #   continue
+    elseif subject_id == source_id
+      continue
+    end
+
+    infection_time = time(state) + rand(state.rng, time_dist)
+    if infection_time > max_time
+      continue
+    end
+
+    @assert time(state) <= infection_time <= (end_time - start_time + time(state))
+    push!(state.queue, Event(Val(TransmissionEvent),
+      infection_time,
+      subject_id,
+      source_id,
+      ClassContact,
+      strain)
+    )
+  end
+  nothing
+end
+
+function enqueue_transmissions!(state::SimState, ::Val{SchoolContact}, source_id::Integer, params::SimParams)
+  school = schoolof(params, source_id)
+
+  progression = progressionof(state, source_id)
+
+  start_time = progression.incubation_time
+  end_time =  if      !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
+              elseif  !ismissing(progression.recovery_time);        progression.recovery_time
+              else    error("no recovery nor severe symptoms time defined")
+              end
+
+  multiplier = 1.0
+  if length(params.household_params.holidays_start_stop) > 0
+    hss = params.household_params.holidays_start_stop
+    start_time2 = earliest_noholiday_from(start_time, hss)
+    end_time2 = latest_noholiday_before(end_time, hss)
+    if end_time2 <= start_time2
+      return nothing
+    end
+    multiplier = (end_time2 - start_time2) / (end_time - start_time)
+    start_time = start_time2
+    end_time = end_time2
+  end
+
+  max_time = time(state) - start_time + end_time
+
+  strain = strainof(state, source_id)
+
+  mean_infection_time = (length(school)-1) / (multiplier * params.school_kernel_param)
+  mean_infection_time /= straininfectivity(params, strain)
+  time_dist = Exponential(mean_infection_time)
+
+  for subject_id in school
+    if Healthy != health(state, subject_id)
+      continue
+    # elseif isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
+    #   continue
+    elseif subject_id == source_id
+      continue
+    end
+
+    infection_time = time(state) + rand(state.rng, time_dist)
+    if infection_time > max_time
+      continue
+    end
+
+    @assert time(state) <= infection_time <= (end_time - start_time + time(state))
+    push!(state.queue, Event(Val(TransmissionEvent),
+      infection_time,
+      subject_id,
+      source_id,
+      SchoolContact,
+      strain)
+    )
+  end
+  nothing
+end

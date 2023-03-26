@@ -43,20 +43,20 @@ function add_screening!(state::AbstractSimState, params::AbstractSimParams, time
       push!(state.queue, event)
     end
   else
-    t = params.screening_params.interval_times
+    t = copy(params.screening_params.interval_times)
     periods = params.screening_params.interval_periods
     @assert length(t) == length(periods)
     append!(t, time_limit)
     for index in 1 : length(t) - 1
       last_elem = missing
-      for ti in t[i] : periods[i] : t[i + 1]
+      for ti in t[index] : periods[index] : t[index + 1]
         last_elem = ti
         event = Event(Val(ScreeningEvent), ti)
         push!(state.queue, event)
       end
       if !ismissing(last_elem)
-        if i < length(t) - 1
-          t[i + 1] = last_elem + periods[i + 1]
+        if index < length(t) - 1
+          t[index + 1] = last_elem + periods[index + 1]
         end
       end
     end

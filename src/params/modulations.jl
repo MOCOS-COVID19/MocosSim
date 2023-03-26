@@ -127,7 +127,7 @@ function infectionsuccess(modulation::InfectionModulation, state::AbstractSimSta
   @assert kind(event) == TransmissionEvent
 
   ck = contactkind(event)
-  if ConstantKernelContact !== ck && AgeCouplingContact !== ck
+  if ConstantKernelContact !== ck && AgeCouplingContact !== ck && SchoolContact !== ck && ClassContact !== ck
     return true # do not affect other types of contact than "outer" ones
   end
 
@@ -142,7 +142,7 @@ function infectionsuccess(state::AbstractSimState, params::AbstractSimParams, ev
   @assert kind(event) == TransmissionEvent
 
   ck = contactkind(event)
-  if ConstantKernelContact !== ck && AgeCouplingContact !== ck
+  if ConstantKernelContact !== ck && AgeCouplingContact !== ck && SchoolContact !== ck && ClassContact !== ck
     return true # do not affect other types of contact than "outer" ones
   end
 

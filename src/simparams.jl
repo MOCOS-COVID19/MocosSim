@@ -81,7 +81,43 @@ isimmune(state::SimState, params::SimParams, subject_id::Integer, immunity::Bool
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
 school(params::SimParams, person_id::Integer) = params.schools[person_id]
 class(params::SimParams, person_id::Integer) = params.classes[person_id]
+schoolof(params::SimParams, person_id::Integer) = findall(==(school(params, person_id)), params.schools)
+classof(params::SimParams, person_id::Integer) = findall(==(class(params, person_id)), params.classes)
 isattendingschool(params::SimParams, person_id::Integer) = params.attending_schools[person_id]
+function earliest_noholiday_from(start_time::TimePoint, holidays_start_stop::Vector{TimePoint})
+  @assert length(holidays_start_stop) > 0
+  @assert length(holidays_start_stop) % 2 == 0
+  s = sort(holidays_start_stop)
+  s_stop = s[2:2:end]
+  s_start = s[begin:2:end]
+  last_holiday_id_prior_to_start = findlast(<=(start_time), s_start)
+  if isnothing(last_holiday_id_prior_to_start)
+      return start_time
+  else
+      if s_stop[last_holiday_id_prior_to_start] < start_time
+          return start_time
+      else
+          return s_stop[last_holiday_id_prior_to_start]
+      end
+  end
+end
+function latest_noholiday_before(end_time::TimePoint, holidays_start_stop::Vector{TimePoint})
+  @assert length(holidays_start_stop) > 0
+  @assert length(holidays_start_stop) % 2 == 0
+  s = sort(holidays_start_stop)
+  s_stop = s[2:2:end]
+  s_start = s[begin:2:end]
+  first_holiday_id_after_end = findfirst(>=(end_time), s_stop)
+  if isnothing(first_holiday_id_after_end)
+      return end_time
+  else
+      if s_start[first_holiday_id_after_end] > end_time
+          return end_time
+      else
+          return s_start[first_holiday_id_after_end]
+      end
+  end
+end
 age(params::SimParams, person_id::Integer) = params.ages[person_id]
 gender(params::SimParams, person_id::Integer) = params.genders[person_id]
 

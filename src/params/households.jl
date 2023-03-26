@@ -1,6 +1,7 @@
 Base.@kwdef struct HouseholdParams
   quarantine_prob::Float64 = 0.5
   trace_prob::Float64 = 0.5
+  holidays_start_stop::Vector{TimePoint} = TimePoint[]
 end
 
 function make_household_ptrs!(

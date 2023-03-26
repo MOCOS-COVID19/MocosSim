@@ -159,6 +159,10 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
   enqueue_transmissions!(state, Val(ConstantKernelContact), event.subject_id, params)
   enqueue_transmissions!(state, Val(HouseholdContact), event.subject_id, params)
   enqueue_transmissions!(state, Val(AgeCouplingContact), event.subject_id, params)
+  if isattendingschool(params, subject_id)
+    enqueue_transmissions!(state, Val(ClassContact), subject_id, params)
+    enqueue_transmissions!(state, Val(SchoolContact), subject_id, params)
+  end
   # hospital transmissions are enqueued in GoHospitalEvent
 
   detectioncheck!(state, params, subject_id)
