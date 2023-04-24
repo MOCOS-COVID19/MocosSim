@@ -27,7 +27,10 @@ include("params/screening.jl")
 
 struct SimParams <: AbstractSimParams
   household_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}  # (i1,i2) where i1 and i2 are the indices of first and last member of the household
-
+  df_school::DataFrame
+  df_class::DataFrame
+  school_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}
+  class_ptrs::Vector{Tuple{PersonIdx,PersonIdx}}
   ages::Vector{Age}
   classes::Vector{Class}
   schools::Vector{School}
@@ -81,8 +84,24 @@ isimmune(state::SimState, params::SimParams, subject_id::Integer, immunity::Bool
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
 school(params::SimParams, person_id::Integer) = params.schools[person_id]
 class(params::SimParams, person_id::Integer) = params.classes[person_id]
-schoolof(params::SimParams, person_id::Integer) = findall(==(school(params, person_id)), params.schools)
-classof(params::SimParams, person_id::Integer) = findall(==(class(params, person_id)), params.classes)
+
+# define a binary search lookup function (thanks ChatGPT!)
+function lookup_value(x, col)
+    lo, hi = 1, size(col, 1)
+    while lo <= hi
+        mid = (lo + hi) ÷ 2
+        if col[mid] == x
+            return mid
+        elseif col[mid] < x
+            lo = mid + 1
+        else
+            hi = mid - 1
+        end
+    end
+end
+
+schoolof(params::SimParams, person_id::Integer) = params.df_school[UnitRange(params.school_ptrs[lookup_value(school(params, person_id), params.df_school[:, :school_index])]...), :index]
+classof(params::SimParams, person_id::Integer) = params.df_class[UnitRange(params.class_ptrs[lookup_value(class(params, person_id), params.df_class[:, :class_index])]...), :index]
 isattendingschool(params::SimParams, person_id::Integer) = params.attending_schools[person_id]
 function earliest_noholiday_from(start_time::TimePoint, holidays_start_stop::Vector{TimePoint})
   @assert length(holidays_start_stop) > 0
@@ -236,10 +255,14 @@ function make_params(
   healthcare_detection_delay::Float64=1.0,
 )
   sort!(individuals_df, :household_index)
+  df_school = sort!(filter(x -> x.attending_school==1, individuals_df), [:school_index])[!, [:school_index, :index]]
+  df_class = sort!(filter(x -> x.attending_school==1, individuals_df), [:class_index])[!, [:class_index, :index]]
 
   num_individuals = individuals_df |> nrow
 
   household_ptrs = make_household_ptrs(individuals_df.household_index)
+  school_ptrs = make_household_ptrs(df_school.school_index)
+  class_ptrs = make_household_ptrs(df_class.class_index)
 
   strain_infectivity_table = make_infectivity_table(british_multiplier=british_strain_multiplier, delta_multiplier=delta_strain_multiplier,omicron_multiplier=omicron_strain_multiplier)
 
@@ -295,6 +318,10 @@ function make_params(
 
   params = SimParams(
     household_ptrs,
+    df_school,
+    df_class,
+    school_ptrs,
+    class_ptrs,
     individuals_df.age,
     individuals_df.class_index,
     individuals_df.school_index,
