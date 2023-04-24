@@ -254,7 +254,9 @@ function make_params(
   healthcare_detection_prob::Float64=0.8,
   healthcare_detection_delay::Float64=1.0,
 )
+  individuals_df.index = axes(individuals_df, 1)
   sort!(individuals_df, :household_index)
+
   df_school = sort!(filter(x -> x.attending_school==1, individuals_df), [:school_index])[!, [:school_index, :index]]
   df_class = sort!(filter(x -> x.attending_school==1, individuals_df), [:class_index])[!, [:class_index, :index]]
 
