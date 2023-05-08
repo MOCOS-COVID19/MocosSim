@@ -46,11 +46,17 @@ Base.@kwdef struct CyclicOutsideCases <: AbstractOutsideCases
   frequency::TimePoint = 1.0 |> MocosSim.TimePoint
   time_limit::TimePoint = typemax(TimePoint)
   strain::StrainKind = ChineseStrain
+  down_age::Union{Nothing, Real} = nothing
 end
   
 function (f::CyclicOutsideCases)(state::AbstractSimState, ::AbstractSimParams)
-  N = length(state.individuals)
+  df = copy(state.individuals)
+  N = length(df)
   individuals = 1:N
+  if nothing !== f.down_age
+    df[!, :index] = 1:nrow(df)
+    individuals = filter(x -> x.age >= f.down_age, df)[!, :index]
+  end
   for infection_time in f.import_time:f.frequency:f.time_limit
     for _ in 1:f.num_infections
       person_id = sample(state.rng, individuals)
