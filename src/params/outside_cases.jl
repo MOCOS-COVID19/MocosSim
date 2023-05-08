@@ -49,13 +49,11 @@ Base.@kwdef struct CyclicOutsideCases <: AbstractOutsideCases
   down_age::Union{Nothing, Real} = nothing
 end
   
-function (f::CyclicOutsideCases)(state::AbstractSimState, ::AbstractSimParams)
-  df = copy(state.individuals)
-  N = length(df)
+function (f::CyclicOutsideCases)(state::AbstractSimState, params::AbstractSimParams)
+  N = length(state.individuals)
   individuals = 1:N
   if nothing !== f.down_age
-    df[!, :index] = 1:nrow(df)
-    individuals = filter(x -> x.age >= f.down_age, df)[!, :index]
+    individuals = findall(x -> x >= f.down_age, params.ages)
   end
   for infection_time in f.import_time:f.frequency:f.time_limit
     for _ in 1:f.num_infections
