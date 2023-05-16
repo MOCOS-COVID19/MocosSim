@@ -61,8 +61,8 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
   max_time = time(state) - start_time + end_time
 
   strain = strainof(state, source_id)
-
-  mean_infection_time = (length(household)-1) / params.household_kernel_param
+  hs = length(household) - 1
+  mean_infection_time = hs / max(1, log(hs)) / params.household_kernel_param
   mean_infection_time /= straininfectivity(params, strain)
   time_dist = Exponential(mean_infection_time)
 
