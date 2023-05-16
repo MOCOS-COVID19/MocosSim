@@ -33,10 +33,13 @@ function AgeCouplingParams(
 
   if nothing !== contact_normalization # normalize such that expected number of contacts is equal to the given value
     group_sizes = groupsizes(coupling_sampler.grouping)
+    @show group_sizes
     mean_contacts = source_weighting' * group_sizes / sum(group_sizes)
+    @show mean_contacts
     source_weighting .*= contact_normalization / mean_contacts
+    @show source_weighting
   end
-
+  brbjr
   AgeCouplingParams(
     coupling_sampler,
     source_weighting
