@@ -43,6 +43,8 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
   nothing
 end
 
+const HouseholdAttackRatesTable = SVector{NUM_STRAINS, Float64}
+
 function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source_id::Integer, params::SimParams)
   household = householdof(params, source_id)
 
@@ -61,24 +63,25 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
   max_time = time(state) - start_time + end_time
 
   strain = strainof(state, source_id)
-  hs = length(household) - 1
-  mean_infection_time = hs / params.household_kernel_param
-  mean_infection_time /= straininfectivity(params, strain)
-  time_dist = Exponential(mean_infection_time)
-
+  hs = length(household)
+  attack_rates = HouseholdAttackRatesTable(0.17, 0.2, 0.25, 0.3)
+  attack_rate = attack_rates[UInt(strain)]
+  # hs = length(household) - 1
+  # mean_infection_time = hs / params.household_kernel_param
+  # mean_infection_time /= straininfectivity(params, strain)
+  # time_dist = Exponential(mean_infection_time)
+  transmission_prob = (1 + 2 * attack_rate) / (hs + 1 / attack_rate)
+  time_dist = Uniform(time(state), end_time - start_time + time(state))
   for subject_id in household
     if Healthy != health(state, subject_id)
       continue
-    # elseif isimmune(state, params, subject_id, immunityof(state, subject_id), strain)
-    #   continue
     elseif subject_id == source_id
       continue
     end
-
-    infection_time = time(state) + rand(state.rng, time_dist)
-    if infection_time > max_time
+    if rand(rng) > transmission_prob
       continue
     end
+    infection_time = time(state) + rand(state.rng, time_dist)
 
     @assert time(state) <= infection_time <= (end_time - start_time + time(state))
     push!(state.queue, Event(Val(TransmissionEvent),
