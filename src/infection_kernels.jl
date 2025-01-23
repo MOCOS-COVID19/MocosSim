@@ -71,7 +71,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
   # mean_infection_time /= straininfectivity(params, strain)
   # time_dist = Exponential(mean_infection_time)
   transmission_prob = (1 + 2 * attack_rate) / (hs + 1 / attack_rate)
-  time_dist = Uniform(time(state), end_time - start_time + time(state))
+  time_dist = Uniform(0, end_time - start_time)
   for subject_id in household
     if Healthy != health(state, subject_id)
       continue
