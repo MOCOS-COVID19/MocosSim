@@ -64,8 +64,9 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
 
   strain = strainof(state, source_id)
   hs = length(household)
-  attack_rates = HouseholdAttackRatesTable(0.17, 0.2, 0.25, 0.3)
-  attack_rate = attack_rates[UInt(strain)]
+  # attack_rates = HouseholdAttackRatesTable(0.17, 0.2, 0.25, 0.3)
+  attack_rates = HouseholdAttackRatesTable(1, 1.175, 1.45, 1.75)
+  attack_rate = attack_rates[UInt(strain)] * params.household_kernel_param
   # hs = length(household) - 1
   # mean_infection_time = hs / params.household_kernel_param
   # mean_infection_time /= straininfectivity(params, strain)
