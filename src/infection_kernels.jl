@@ -78,7 +78,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HouseholdContact}, source
     elseif subject_id == source_id
       continue
     end
-    if rand(rng) > transmission_prob
+    if rand(state.rng) > transmission_prob
       continue
     end
     infection_time = time(state) + rand(state.rng, time_dist)
