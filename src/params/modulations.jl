@@ -142,7 +142,7 @@ function infectionsuccess(state::AbstractSimState, params::AbstractSimParams, ev
   @assert kind(event) == TransmissionEvent
 
   ck = contactkind(event)
-  if ConstantKernelContact !== ck && AgeCouplingContact !== ck && SchoolContact !== ck && ClassContact !== ck
+  if ConstantKernelContact !== ck && AgeCouplingContact !== ck
     return true # do not affect other types of contact than "outer" ones
   end
 
