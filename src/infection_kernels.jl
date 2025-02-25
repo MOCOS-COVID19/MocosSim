@@ -202,8 +202,8 @@ function enqueue_transmissions!(state::SimState, ::Val{ClassContact}, source_id:
   multiplier = 1.0
   if length(params.household_params.holidays_start_stop) > 0
     hss = params.household_params.holidays_start_stop
-    start_time2 = earliest_noholiday_from(start_time, hss)
-    end_time2 = latest_noholiday_before(end_time, hss)
+    start_time2 = earliest_noholiday_from(time(state) + start_time, hss)
+    end_time2 = latest_noholiday_before(time(state) + end_time, hss)
     if end_time2 <= start_time2
       return nothing
     end
