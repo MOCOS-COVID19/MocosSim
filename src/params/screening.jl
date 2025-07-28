@@ -12,25 +12,32 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
   if params.screening_params != nothing
     for id in 1:numindividuals(state)
       health = MocosSim.health(state, id)
+      # quick speedup as test says No in these scenarios
       if health == Healthy || health == Recovered || health == Incubating
         continue
       end
-
+      # age condition:
       age = params.ages[id]
       if age < params.screening_params.lower_bound_age || age > params.screening_params.upper_bound_age
         continue
       end
-
+      # test precision condition:
       if rand(state.rng) >= params.screening_params.precision
         continue
       end
+      screening_freedom = freedom(state, id)
+      # school eligibility check conditions:
+      if ((HomeTreatment == screening_freedom) || (HomeQuarantine == screening_freedom) || (Hospitalized == screening_freedom))
+          continue
+      end
+      if
       push!(
         state.queue, 
         Event(
           Val(DetectionEvent),
           time(event),
           id,
-          OutsideQuarantineDetection),
+          OutsideQuarantineScreeningDetection),
           immediate=true)
     end
   end
