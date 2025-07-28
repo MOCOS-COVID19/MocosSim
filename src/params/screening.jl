@@ -30,7 +30,6 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
       if ((HomeTreatment == screening_freedom) || (HomeQuarantine == screening_freedom) || (Hospitalized == screening_freedom))
           continue
       end
-      if
       push!(
         state.queue, 
         Event(
