@@ -4,8 +4,8 @@ Base.@kwdef struct ScreeningParams
   period::Float64 = 7.0
   lower_bound_age::Int64 = 8
   upper_bound_age::Int64 = 16
-  interval_periods::Vector{Float64} = Float64[]
-  interval_times::Vector{TimePoint} = TimePoint[]
+  test_times::Vector{TimePoint} = TimePoint[]
+  adherence_pmf::Vector{Float64} = Float64[]  # length should be 86
 end
 
 function screening!(state::AbstractSimState, params::AbstractSimParams, event::Event)
@@ -30,6 +30,12 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
       if ((HomeTreatment == screening_freedom) || (HomeQuarantine == screening_freedom) || (Hospitalized == screening_freedom))
           continue
       end
+      school_id = get_school_id_for_individual(id, params)
+      school_adherence_probability = params.school_adherence_prob[school_id]
+      # simulate adherence for this test
+      if rand(state.rng) > school_adherence_probability
+          continue  # school skips this test
+      end
       push!(
         state.queue, 
         Event(
@@ -42,29 +48,11 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
   end
 end
 
-function add_screening!(state::AbstractSimState, params::AbstractSimParams, time_limit::TimePoint=typemax(TimePoint))
-  if length(params.screening_params.interval_times) == 0
-    for screening_time in params.screening_params.start_time:params.screening_params.period:time_limit
+function add_screening!(state::AbstractSimState, params::AbstractSimParams)
+  if !isempty(params.screening_params.test_times)
+    for screening_time in params.screening_params.test_times
       event = Event(Val(ScreeningEvent), screening_time)
       push!(state.queue, event)
-    end
-  else
-    t = copy(params.screening_params.interval_times)
-    periods = params.screening_params.interval_periods
-    @assert length(t) == length(periods)
-    append!(t, time_limit)
-    for index in 1 : length(t) - 1
-      last_elem = missing
-      for ti in t[index] : periods[index] : t[index + 1]
-        last_elem = ti
-        event = Event(Val(ScreeningEvent), ti)
-        push!(state.queue, event)
-      end
-      if !ismissing(last_elem)
-        if index < length(t) - 1
-          t[index + 1] = last_elem + periods[index + 1]
-        end
-      end
     end
   end
 end
