@@ -10,6 +10,8 @@ end
 
 function screening!(state::AbstractSimState, params::AbstractSimParams, event::Event)
   if params.screening_params != nothing
+    # --- CACHE: stores school_id → Bool (true = participates, false = skips)
+    school_participation = Dict{Int, Bool}()
     for id in 1:numindividuals(state)
       health = MocosSim.health(state, id)
       # quick speedup as test says No in these scenarios
@@ -30,11 +32,15 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
       if ((HomeTreatment == screening_freedom) || (HomeQuarantine == screening_freedom) || (Hospitalized == screening_freedom))
           continue
       end
-      school_id = get_school_id_for_individual(id, params)
-      school_adherence_probability = params.school_adherence_prob[school_id]
-      # simulate adherence for this test
-      if rand(state.rng) > school_adherence_probability
-          continue  # school skips this test
+      # --- Determine school participation only ONCE ---
+      school_id = school(params, id)
+      if !haskey(school_participation, school_id)
+          school_adherence_probability = school_adherence_probability(params, id)
+          school_participation[school_id] = rand(state.rng) <= school_adherence_probability
+      end
+      # --- Skip the entire school if it opted out ---
+      if school_participation[school_id] == false
+          continue
       end
       push!(
         state.queue, 

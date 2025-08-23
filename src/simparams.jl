@@ -208,7 +208,7 @@ function get_num_schools(individuals_df::DataFrame)
     return length(unique(individuals_df.school_index[individuals_df.attending_school .== 1]))
 end
 
-function assign_school_adherence!(num_schools, screening_params)
+function assign_school_adherence(num_schools::Int64, screening_params::Union{Nothing,ScreeningParams})
     if screening_params === nothing
         return [nothing for _ in 1:num_schools]
     else
