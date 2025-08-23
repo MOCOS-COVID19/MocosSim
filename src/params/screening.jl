@@ -35,8 +35,7 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
       # --- Determine school participation only ONCE ---
       school_id = school(params, id)
       if !haskey(school_participation, school_id)
-          school_adherence_probability = school_adherence_probability(params, id)
-          school_participation[school_id] = rand(state.rng) <= school_adherence_probability
+          school_participation[school_id] = rand(state.rng) <= params.school_adherence_prob[school_id]
       end
       # --- Skip the entire school if it opted out ---
       if school_participation[school_id] == false
