@@ -215,8 +215,19 @@ function assign_school_adherence(num_schools::Int64, screening_params::Union{Not
         adherence_pmf = screening_params.adherence_pmf
         total_adherence = length(adherence_pmf)
         adherence_levels = collect(1:total_adherence) ./ total_adherence
-        weights = Weights(adherence_pmf)
-        return [adherence_levels[rand(weights)] for _ in 1:num_schools]
+
+        # Compute cumulative distribution
+        cumulative_pmf = cumsum(adherence_pmf)
+
+        school_adherence = Vector{Float64}(undef, num_schools)
+        for i in 1:num_schools
+            r = rand()  # uniform random in [0, 1)
+            # Find smallest index where cumulative >= r
+            idx = searchsortedfirst(cumulative_pmf, r)
+            school_adherence[i] = adherence_levels[idx]
+        end
+
+        return school_adherence
     end
 end
 
