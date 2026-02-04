@@ -4,12 +4,14 @@ Base.@kwdef struct ScreeningParams
   period::Float64 = 7.0
   lower_bound_age::Int64 = 8
   upper_bound_age::Int64 = 16
-  interval_periods::Vector{Float64} = Float64[]
-  interval_times::Vector{TimePoint} = TimePoint[]
+  test_times::Vector{TimePoint} = TimePoint[]
+  adherence_pmf::Vector{Float64} = Float64[]  # length should be 86
 end
 
 function screening!(state::AbstractSimState, params::AbstractSimParams, event::Event)
   if params.screening_params != nothing
+    # --- CACHE: stores school_id → Bool (true = participates, false = skips)
+    school_participation = Dict{Int, Bool}()
     for id in 1:numindividuals(state)
       health = MocosSim.health(state, id)
       if health == Healthy || health == Recovered || health == Incubating
@@ -24,41 +26,37 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
       if rand(state.rng) >= params.screening_params.precision
         continue
       end
+      screening_freedom = freedom(state, id)
+      # school eligibility check conditions:
+      if ((HomeTreatment == screening_freedom) || (HomeQuarantine == screening_freedom) || (Hospitalized == screening_freedom))
+          continue
+      end
+      # --- Determine school participation only ONCE ---
+      school_id = school(params, id)
+      if !haskey(school_participation, school_id)
+          school_participation[school_id] = rand(state.rng) <= params.school_adherence_prob[school_id]
+      end
+      # --- Skip the entire school if it opted out ---
+      if school_participation[school_id] == false
+          continue
+      end
       push!(
         state.queue, 
         Event(
           Val(DetectionEvent),
           time(event),
           id,
-          OutsideQuarantineDetection),
+          OutsideQuarantineScreeningDetection),
           immediate=true)
     end
   end
 end
 
-function add_screening!(state::AbstractSimState, params::AbstractSimParams, time_limit::TimePoint=typemax(TimePoint))
-  if length(params.screening_params.interval_times) == 0
-    for screening_time in params.screening_params.start_time:params.screening_params.period:time_limit
+function add_screening!(state::AbstractSimState, params::AbstractSimParams)
+  if !isempty(params.screening_params.test_times)
+    for screening_time in params.screening_params.test_times
       event = Event(Val(ScreeningEvent), screening_time)
       push!(state.queue, event)
-    end
-  else
-    t = copy(params.screening_params.interval_times)
-    periods = params.screening_params.interval_periods
-    @assert length(t) == length(periods)
-    append!(t, time_limit)
-    for index in 1 : length(t) - 1
-      last_elem = missing
-      for ti in t[index] : periods[index] : t[index + 1]
-        last_elem = ti
-        event = Event(Val(ScreeningEvent), ti)
-        push!(state.queue, event)
-      end
-      if !ismissing(last_elem)
-        if index < length(t) - 1
-          t[index + 1] = last_elem + periods[index + 1]
-        end
-      end
     end
   end
 end

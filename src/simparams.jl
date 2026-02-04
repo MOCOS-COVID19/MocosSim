@@ -73,6 +73,7 @@ struct SimParams <: AbstractSimParams
   spreading_params::Union{Nothing, SpreadingParams}
 
   household_params::Union{Nothing, HouseholdParams}
+  school_adherence_prob::Vector{Float32}
 end
 
 numindividuals(params::SimParams) = length(params.household_ptrs)
@@ -83,6 +84,7 @@ isimmune(state::SimState, params::SimParams, subject_id::Integer, immunity::Bool
 
 householdof(params::SimParams, person_id::Integer) = UnitRange(params.household_ptrs[person_id]...)
 school(params::SimParams, person_id::Integer) = params.schools[person_id]
+school_adherence_probability(params::SimParams, person_id::Integer) = params.school_adherence_prob[school(params, person_id)]
 class(params::SimParams, person_id::Integer) = params.classes[person_id]
 
 # define a binary search lookup function (thanks ChatGPT!)
@@ -202,6 +204,33 @@ function load_params(
   )
 end
 
+function get_num_schools(individuals_df::DataFrame)
+    return length(unique(individuals_df.school_index[individuals_df.attending_school .== 1]))
+end
+
+function assign_school_adherence(num_schools::Int64, screening_params::Union{Nothing,ScreeningParams})
+    if screening_params === nothing
+        return [nothing for _ in 1:num_schools]
+    else
+        adherence_pmf = screening_params.adherence_pmf
+        total_adherence = length(adherence_pmf)
+        adherence_levels = collect(1:total_adherence) ./ total_adherence
+
+        # Compute cumulative distribution
+        cumulative_pmf = cumsum(adherence_pmf)
+
+        school_adherence = Vector{Float64}(undef, num_schools)
+        for i in 1:num_schools
+            r = rand()  # uniform random in [0, 1)
+            # Find smallest index where cumulative >= r
+            idx = searchsortedfirst(cumulative_pmf, r)
+            school_adherence[i] = adherence_levels[idx]
+        end
+
+        return school_adherence
+    end
+end
+
 function make_params(
   rng::AbstractRNG=MersenneTwister(0);
   individuals_df::DataFrame,
@@ -261,7 +290,7 @@ function make_params(
   df_class = sort!(filter(x -> x.attending_school==1, individuals_df), [:class_index])[!, [:class_index, :index]]
 
   num_individuals = individuals_df |> nrow
-
+  num_schools = get_num_schools(individuals_df)
   household_ptrs = make_household_ptrs(individuals_df.household_index)
   school_ptrs = make_household_ptrs(df_school.school_index)
   class_ptrs = make_household_ptrs(df_class.class_index)
@@ -318,6 +347,7 @@ function make_params(
     else error("household_params has invalid values for probas")
     end
 
+  school_adherance_prob = assign_school_adherence(num_schools, screening_params)
   params = SimParams(
     household_ptrs,
     df_school,
@@ -365,7 +395,8 @@ function make_params(
 
     screening_params,
     spreading_params,
-    household_params
+    household_params,
+    school_adherance_prob
   )
   params
 end
@@ -387,10 +418,13 @@ function saveparams(dict, p::SimParams)
   dict["tracing/forward_tracing_prob"] = p.forward_tracing_prob
   dict["tracing/forward_detection_delay"] = p.forward_detection_delay
   dict["tracing/testing_time"] = p.testing_time
+  dict["school_adherence_prob"] = p.school_adherence_prob
+
 
   saveparams(dict, p.progressions, "progressions/")
   nothing===p.hospital_kernel_params || saveparams(dict, p.hospital_kernel_params, "hospital/")
   nothing===p.phone_tracing_params || saveparams(dict, p.phone_tracing_params, "phone_tracing/")
   nothing===p.spreading_params || saveparams(dict, p.spreading_params, "spreading")
+  nothing===p.screening_params || saveparams(dict, p.screening_params, "screening")
   nothing
 end
