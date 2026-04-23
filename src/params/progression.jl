@@ -42,6 +42,7 @@ const age_hospitalization_thresholds = Int[0, 40, 50, 60, 70, 80]
 function sample_severity(rng::AbstractRNG, age::Real, gender::Bool, immunity::Bool, dist_severity_by_age::Matrix{AliasSampler})
   @assert age >= 0 "age should be non-negative"
   gender_int = gender + 1 |> UInt8
+  # woman True, man False
   dist = dist_severity_by_age[min(age + 1, max_age_hosp), gender_int]
   severity_int = asample(dist, rng) |> UInt8
   @assert severity_int <= 4 && severity_int > 1
@@ -122,7 +123,7 @@ end
       if immunity # && (severity==Asymptomatic)
         recovery_time = incubation_time  # TODO if we want this # rand(rng, dist_mild_recovery)
       else # now only asymptomatic, but not vaccinated
-        recovery_time = rand(rng, dist_mild_recovery)
+        recovery_time = incubation_time + rand(rng, dist_mild_recovery)
       end
     end
   end
