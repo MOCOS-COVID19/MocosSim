@@ -8,8 +8,10 @@ function enqueue_transmissions!(state::SimState, ::Val{ConstantKernelContact}, s
               else    error("no recovery nor symptoms time defined")
               end
   if end_time <= start_time
-    @warn "end time ($end_time) is smaller than start time ($start_time) in ConstantKernelContact"
-    return
+      if progression.severity != Asymptomatic
+          @warn "end time ($end_time) is smaller than start time ($start_time) in ConstantKernelContact"
+      end
+      return
   end
 
   strain = strainof(state, source_id)
@@ -166,8 +168,10 @@ function enqueue_transmissions!(state::SimState, ::Val{AgeCouplingContact}, sour
               else    error("no recovery nor symptoms time defined")
               end
   if end_time <= start_time
-    @warn "end time ($end_time) is smaller than start time ($start_time) in AgeCouplingContact"
-    return
+      if progression.severity != Asymptomatic
+          @warn "end time ($end_time) is smaller than start time ($start_time) in AgeCouplingContact"
+      end
+      return
   end
 
   strain = strainof(state, source_id)
@@ -209,13 +213,16 @@ function enqueue_transmissions!(state::SimState, ::Val{ClassContact}, source_id:
   progression = progressionof(state, source_id)
 
   start_time = progression.incubation_time
-  end_time =  if      !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
+  end_time =  if      !ismissing(progression.mild_symptoms_time);   progression.mild_symptoms_time
+              elseif  !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
               elseif  !ismissing(progression.recovery_time);        progression.recovery_time
               else    error("no recovery nor severe symptoms time defined")
               end
   if end_time <= start_time
-    @warn "end time ($end_time) is smaller than start time ($start_time) in ClassContact"
-    return
+      if progression.severity != Asymptomatic
+          @warn "end time ($end_time) is smaller than start time ($start_time) in ClassContact"
+      end
+      return
   end
 
   multiplier = 1.0
@@ -271,13 +278,16 @@ function enqueue_transmissions!(state::SimState, ::Val{SchoolContact}, source_id
   progression = progressionof(state, source_id)
 
   start_time = progression.incubation_time
-  end_time =  if      !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
+  end_time =  if      !ismissing(progression.mild_symptoms_time);   progression.mild_symptoms_time
+              elseif  !ismissing(progression.severe_symptoms_time); progression.severe_symptoms_time
               elseif  !ismissing(progression.recovery_time);        progression.recovery_time
               else    error("no recovery nor severe symptoms time defined")
               end
   if end_time <= start_time
-    @warn "end time ($end_time) is smaller than start time ($start_time) in SchoolContact"
-    return
+      if progression.severity != Asymptomatic
+          @warn "end time ($end_time) is smaller than start time ($start_time) in SchoolContact"
+      end
+      return
   end
 
   multiplier = 1.0

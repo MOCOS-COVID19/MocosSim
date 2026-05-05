@@ -123,7 +123,7 @@ end
       if immunity # && (severity==Asymptomatic)
         recovery_time = incubation_time  # TODO if we want this # rand(rng, dist_mild_recovery)
       else # now only asymptomatic, but not vaccinated
-        recovery_time = incubation_time + rand(rng, dist_mild_recovery)
+        recovery_time = incubation_time + rand(rng, dist_symptom_onset) + rand(rng, dist_mild_recovery)
       end
     end
   end

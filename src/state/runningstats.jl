@@ -34,10 +34,10 @@ end
 function reset!(stats::RunningStats)
   stats.num_infected = 0
   stats.num_detected = 0
-  stats.num_infected = 0
+  stats.num_dead = 0
   #empty!(stats.daily_detections)
 end
 
-function sizehint!(stats::RunningStats, days::Integer)
-  sizehint!(stats.daily_detections, days)
-end
+# function sizehint!(stats::RunningStats, days::Integer)
+#   sizehint!(stats.daily_detections, days)
+# end

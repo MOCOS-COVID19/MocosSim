@@ -20,4 +20,4 @@ struct IndividualState
     NullStrain
   )
 
-  show(io::IO, s::IndividualState) = print(io, "(",s.health, ", ", s.freedom, ", ", s.detected, ", ", s.immunity, ", ", s.imunization_day, ", ", s.quarantine_level,  ", ", s.strain,  ")")
+  show(io::IO, s::IndividualState) = print(io, "(",s.health, ", ", s.freedom, ", ", s.detected, ", ", s.infection_immunity, ", ", s.severe_immunity, ", ", s.imunization_day, ", ", s.quarantine_level,  ", ", s.strain,  ")")

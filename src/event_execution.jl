@@ -156,9 +156,9 @@ function execute!(::Val{BecomeInfectiousEvent}, state::SimState, params::SimPara
     @error "Unsupported severity $severity"
   end
 
-  enqueue_transmissions!(state, Val(ConstantKernelContact), event.subject_id, params)
-  enqueue_transmissions!(state, Val(HouseholdContact), event.subject_id, params)
-  enqueue_transmissions!(state, Val(AgeCouplingContact), event.subject_id, params)
+  enqueue_transmissions!(state, Val(ConstantKernelContact), subject_id, params)
+  enqueue_transmissions!(state, Val(HouseholdContact), subject_id, params)
+  enqueue_transmissions!(state, Val(AgeCouplingContact), subject_id, params)
   if isattendingschool(params, subject_id)
     enqueue_transmissions!(state, Val(ClassContact), subject_id, params)
     enqueue_transmissions!(state, Val(SchoolContact), subject_id, params)
