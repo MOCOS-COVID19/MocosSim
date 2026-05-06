@@ -13,6 +13,9 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
     # --- CACHE: stores school_id → Bool (true = participates, false = skips)
     school_participation = Dict{Int, Bool}()
     for id in 1:numindividuals(state)
+      if !isattendingschool(params, id)
+          continue
+      end
       health = MocosSim.health(state, id)
       if health == Healthy || health == Recovered || health == Incubating
         continue
