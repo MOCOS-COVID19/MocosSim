@@ -36,7 +36,7 @@ struct TwoTanhModulations <: InfectionModulation
   limit_value2::Float64
 
   TwoTanhModulations(;weight_detected::Real=0, weight_deaths::Real=0, weight_days::Real=0, loc1::Real=0, scale1::Real=0, limit_value1::Real=0, loc2::Real=0, scale2::Real=0, limit_value2::Real=0) =
-    0 <= limit_value2 <= limit_value1 <= 1 && loc1 < loc2 ? new(weight_detected, weight_deaths, weight_days, loc1, scale1, limit_value1, loc2, scale2, limit_value2) : error("initial_value1 and initial_value2 must be from 0 to 1 and initial_value2 must be not larger than initial_value1, got ($initial_value1, $initial_value2), also loc2 must be after loc1, got ($loc1, $loc2)")
+    0 <= limit_value2 <= limit_value1 <= 1 && loc1 < loc2 ? new(weight_detected, weight_deaths, weight_days, loc1, scale1, limit_value1, loc2, scale2, limit_value2) : error("limit_value1 and limit_value2 must be from 0 to 1 and limit_value2 must be not larger than limit_value1, got ($limit_value1, $limit_value2), also loc2 must be after loc1, got ($loc1, $loc2)")
 end
 
 function evalmodulation(f::TwoTanhModulations, state::AbstractSimState, ::AbstractSimParams)::Float64
@@ -107,8 +107,8 @@ end
 
 function intervals_modulation(x::Real, interval_values::Vector{Float64}, interval_times::Vector{TimePoint})
   @assert length(interval_values) == length(interval_times) + 1
-  times = copy(interval_times)
-  idx = searchsortedlast(insert!(times, 1, 0.0), x)
+  issorted(interval_times) || throw(ArgumentError("interval_times must be sorted"))
+  idx = searchsortedlast(interval_times, x) + 1
   @assert idx <= length(interval_values)
   interval_values[idx]
 end
@@ -127,8 +127,8 @@ function infectionsuccess(modulation::InfectionModulation, state::AbstractSimSta
   @assert kind(event) == TransmissionEvent
 
   ck = contactkind(event)
-  if ConstantKernelContact !== ck && AgeCouplingContact !== ck && SchoolContact !== ck && ClassContact !== ck
-    return true # do not affect other types of contact than "outer" ones
+  if ConstantKernelContact !== ck && AgeCouplingContact !== ck
+    return true # school, class, household, and other structured contacts are not modulated
   end
 
   rand(state.rng) < evalmodulation(modulation, state, params)
@@ -138,16 +138,7 @@ function infectionsuccess(state::AbstractSimState, params::AbstractSimParams, ev
   if isnothing(params.infection_modulation)
     return true
   end
-
-  @assert kind(event) == TransmissionEvent
-
-  ck = contactkind(event)
-  if ConstantKernelContact !== ck && AgeCouplingContact !== ck
-    return true # do not affect other types of contact than "outer" ones
-  end
-
-  rand(state.rng) < evalmodulation(params.infection_modulation, state, params)
-#  infectionsuccess(params.infection_modulation, state, params, event)
+  infectionsuccess(params.infection_modulation, state, params, event)
 end
 
 # This all to avoid using @eval and others

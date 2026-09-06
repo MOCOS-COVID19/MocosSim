@@ -149,7 +149,7 @@ function enqueue_transmissions!(state::SimState, ::Val{HospitalContact}, source_
 
     infection_time::TimePoint = rand(state.rng, time_dist) |> TimePoint
     @assert state.time <= infection_time <= (end_time-start_time + state.time)
-    push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, HospitalContact))
+    push!(state.queue, Event(Val(TransmissionEvent), infection_time, subject_id, source_id, HospitalContact, strain))
 
   end
 end

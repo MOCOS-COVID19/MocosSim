@@ -1,4 +1,4 @@
-using MocosSim: tanh_modulation, infectionsuccess
+using MocosSim: tanh_modulation, infectionsuccess, intervals_modulation
 
 @testset "InfectionModulations" begin
   @testset "ReferenceFunction" begin
@@ -22,6 +22,24 @@ using MocosSim: tanh_modulation, infectionsuccess
         @test tanh_modulation(loc, loc, scale, lhs, rhs) ≈ (lhs + rhs)/2
       end
     end
+  end
+
+  @testset "Intervals" begin
+    values = [0.2, 0.5, 0.8]
+    times = MocosSim.TimePoint[2, 4]
+    @test intervals_modulation(-1, values, times) == 0.2
+    @test intervals_modulation(2, values, times) == 0.5
+    @test intervals_modulation(10, values, times) == 0.8
+    @test_throws ArgumentError intervals_modulation(1, values, reverse(times))
+  end
+
+  @testset "School adherence" begin
+    screening = MocosSim.ScreeningParams(adherence_pmf=[0.0, 1.0])
+    adherence = MocosSim.assign_school_adherence(MersenneTwister(1), [0, 7], screening)
+    @test adherence == Dict(MocosSim.School(0) => 1.0f0, MocosSim.School(7) => 1.0f0)
+    @test isempty(MocosSim.assign_school_adherence(MersenneTwister(1), [0], nothing))
+    @test_throws ArgumentError MocosSim.assign_school_adherence(MersenneTwister(1), [1], MocosSim.ScreeningParams(adherence_pmf=[]))
+    @test_throws ArgumentError MocosSim.assign_school_adherence(MersenneTwister(1), [1], MocosSim.ScreeningParams(adherence_pmf=[0.2, 0.2]))
   end
 
   mutable struct TanhMockState <: MocosSim.AbstractSimState
@@ -57,9 +75,13 @@ using MocosSim: tanh_modulation, infectionsuccess
   mock_state = TanhMockState(MersenneTwister(13), 10.0)
   for i in 1:num_samples
     household_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.HouseholdContact, strain)
+    school_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.SchoolContact, strain)
+    class_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.ClassContact, strain)
     constant_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.ConstantKernelContact, strain)
 
     @test infectionsuccess(modulation, mock_state, TanhMockParams(), household_infection) == true
+    @test infectionsuccess(modulation, mock_state, TanhMockParams(), school_infection) == true
+    @test infectionsuccess(modulation, mock_state, TanhMockParams(), class_infection) == true
 
     hits += infectionsuccess(modulation, mock_state, TanhMockParams(), constant_infection)
   end
@@ -89,9 +111,13 @@ end
   num_samples = 100
   for i in 1:num_samples
     household_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.HouseholdContact, strain)
+    school_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.SchoolContact, strain)
+    class_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.ClassContact, strain)
     constant_infection = Event(Val(MocosSim.TransmissionEvent), 0.0, 0, 0, MocosSim.ConstantKernelContact, strain)
 
     @test infectionsuccess(modulation, mock_state, TanhMockParams(), household_infection) == true
+    @test infectionsuccess(modulation, mock_state, TanhMockParams(), school_infection) == true
+    @test infectionsuccess(modulation, mock_state, TanhMockParams(), class_infection) == true
 
     hits += infectionsuccess( modulation, mock_state, TanhMockParams(), constant_infection)
   end
