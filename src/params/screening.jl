@@ -5,7 +5,17 @@ Base.@kwdef struct ScreeningParams
   lower_bound_age::Int64 = 8
   upper_bound_age::Int64 = 16
   test_times::Vector{TimePoint} = TimePoint[]
-  adherence_pmf::Vector{Float64} = Float64[]  # length should be 86
+  adherence_pmf::Vector{Float64} = Float64[1.0]
+end
+
+function saveparams(dict, p::ScreeningParams, prefix::AbstractString="")
+  dict[prefix*"start_time"] = p.start_time
+  dict[prefix*"precision"] = p.precision
+  dict[prefix*"period"] = p.period
+  dict[prefix*"lower_bound_age"] = p.lower_bound_age
+  dict[prefix*"upper_bound_age"] = p.upper_bound_age
+  dict[prefix*"test_times"] = p.test_times
+  dict[prefix*"adherence_pmf"] = p.adherence_pmf
 end
 
 function screening!(state::AbstractSimState, params::AbstractSimParams, event::Event)
@@ -37,7 +47,7 @@ function screening!(state::AbstractSimState, params::AbstractSimParams, event::E
       # --- Determine school participation only ONCE ---
       school_id = school(params, id)
       if !haskey(school_participation, school_id)
-          school_participation[school_id] = rand(state.rng) <= params.school_adherence_prob[school_id]
+          school_participation[school_id] = rand(state.rng) <= school_adherence_probability(params, id)
       end
       # --- Skip the entire school if it opted out ---
       if school_participation[school_id] == false

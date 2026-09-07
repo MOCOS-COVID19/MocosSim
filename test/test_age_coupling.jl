@@ -19,3 +19,20 @@
 
   end
 end
+
+
+@testset "gender-aware AgeCouplingParams" begin
+  ages = [4, 8, 4, 8]
+  genders = Bool[false, false, true, true]
+  thresholds = [0, 5]
+  weights = [1.0 0 0 0; 0 1.0 0 0; 0 0 1.0 0; 0 0 0 1.0]
+  params = MocosSim.AgeCouplingParams(ages, genders, thresholds, weights, nothing)
+  @test length(params.source_weighting) == 4
+  @test params.coupling.group_ids == MocosSim.GroupIdx[1, 3, 2, 4]
+  @test_throws DimensionMismatch MocosSim.AgeCouplingParams(
+    ages, genders, thresholds, Matrix{Float64}(undef, 2, 2), nothing)
+
+  params_without_genders = MocosSim.AgeCouplingParams(
+    ages, nothing, thresholds, [1.0 0; 0 1.0], nothing)
+  @test params_without_genders.coupling.group_ids == MocosSim.GroupIdx[1, 2, 1, 2]
+end

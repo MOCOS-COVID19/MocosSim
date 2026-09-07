@@ -15,8 +15,16 @@ function AgeCouplingParams(
   contact_normalization::Union{Nothing, Real})
 
   @assert age_thresholds[1] == 0
-  num_groups = length(age_thresholds)
-  @assert (num_groups,num_groups) == size(coupling_weights)
+  num_age_groups = length(age_thresholds)
+  # Each age group is split into two adjacent gender groups below.  Consequently
+  # a gender-aware coupling matrix needs one row and column per (age, gender)
+  # pair, rather than one per age group.
+  num_groups = genders === nothing ? num_age_groups : 2 * num_age_groups
+  size(coupling_weights) == (num_groups, num_groups) || throw(DimensionMismatch(
+    "coupling_weights must have size ($(num_groups), $(num_groups)) for " *
+    "$(num_age_groups) age groups with genders $(genders === nothing ? "disabled" : "enabled"); " *
+    "got $(size(coupling_weights))"
+  ))
 
   group_ids = agegroup.((age_thresholds,), ages)
   @assert minimum(group_ids) > 0
